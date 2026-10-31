@@ -23,6 +23,25 @@ feed="https://github.com/$repo/releases/latest/download/appcast.xml"
 derived=build/DerivedData
 sparkle_bin=$derived/SourcePackages/artifacts/sparkle/Sparkle/bin
 
+# Install guide shown on every GitHub release page.
+release_notes() {
+  cat <<NOTES
+## Install
+
+1. Download **Spanner-$version.dmg** below. Spanner needs macOS 15 or later.
+2. Open the DMG and drag **Spanner** into **Applications**.
+3. Open Spanner. Because the app isn't notarized by Apple yet, macOS blocks the first launch. Go to **System Settings › Privacy & Security**, scroll down to the message about Spanner, and click **Open Anyway**. Or run:
+
+   \`\`\`bash
+   xattr -dr com.apple.quarantine /Applications/Spanner.app
+   \`\`\`
+
+4. Grant the permissions each module asks for (Accessibility, Screen Recording, System Audio Recording) in the onboarding guide.
+
+Spanner lives in the menu bar, not the Dock. Later versions arrive through its built-in updater and don't need step 3 again.
+NOTES
+}
+
 publish=false
 for arg; do
   case $arg in
@@ -146,8 +165,7 @@ print "Generating appcast…"
 if $publish; then
   print "Publishing $tag to $repo…"
   gh release create "$tag" -R "$repo" --title "Spanner $version" \
-    --notes "Download Spanner-$version.dmg below. See the README for first-launch steps." \
-    "$dmg" "$out/appcast.xml"
+    --notes "$(release_notes)" "$dmg" "$out/appcast.xml"
   print "Published https://github.com/$repo/releases/tag/$tag"
 else
   print "Built $dmg and $out/appcast.xml. Rerun with --publish to upload them."
