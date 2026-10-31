@@ -11,7 +11,7 @@
 [![Status](https://img.shields.io/badge/status-early%20development-6B5CF6?style=flat-square)](#research)
 [![Distribution](https://img.shields.io/badge/distribution-direct%20only-3FA9F5?style=flat-square)](#getting-started)
 
-[Features](#features) · [Getting started](#getting-started) · [Tests](#tests) · [Project layout](#project-layout) · [Research](#research)
+[Features](#features) · [Install](#install) · [Getting started](#getting-started) · [Tests](#tests) · [Project layout](#project-layout) · [Research](#research)
 
 </div>
 
@@ -71,12 +71,26 @@
 - **Battery:** the power-flow view shows adapter → system → battery from IOKit telemetry, without root. Also shows Magic Keyboard, Mouse and Trackpad batteries.
 - **Keep Awake:** holds an IOKit power assertion, the same mechanism as `caffeinate`.
 - **Battery, energy by app:** power drawn by each app and its helpers, from the kernel's per-process energy counters.
-- **Around them:** onboarding, a permissions page with live status, launch at login, and Sparkle updates (dormant until a signed appcast exists).
+- **Around them:** onboarding, a permissions page with live status, launch at login, and Sparkle updates.
 
 </details>
 
 > [!NOTE]
 > The switcher relies on private SkyLight/CGS APIs, so Spanner is **direct distribution only**, with no Mac App Store edition. Charge limiting is out of scope for now: firmware shipped with macOS 27 locks the charge-control SMC keys even for root. See the [feasibility report](docs/macOS%20utilities%20app%20feasibility.md).
+
+## Install
+
+1. Download the latest `Spanner-<version>.dmg` from [Releases](https://github.com/hnatien/Spanner-releases/releases/latest).
+2. Open the DMG and drag **Spanner** into **Applications**.
+3. Open Spanner. Because the app isn't notarized by Apple yet, macOS blocks the first launch. Go to **System Settings › Privacy & Security**, scroll down to the message about Spanner, and click **Open Anyway**. Or run:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Spanner.app
+   ```
+
+4. Grant the permissions each module asks for (Accessibility, Screen Recording, System Audio Recording) in the onboarding guide.
+
+Later versions arrive through Spanner's built-in updater and don't need step 3 again.
 
 ## Getting started
 
@@ -96,6 +110,20 @@ open Spanner.xcodeproj
 
 > [!TIP]
 > macOS ties Accessibility and Screen Recording grants to the app's code signature. Ad-hoc builds get a new identity on every rebuild, so grants stop matching. Run `scripts/setup-signing.sh` once to sign with your Apple Development certificate and keep grants across rebuilds. It writes the git-ignored `Config/Local.xcconfig`; without it, builds fall back to ad-hoc signing.
+
+## Releasing
+
+Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` (Sparkle compares the build number, so it must go up every release), commit, then:
+
+```bash
+scripts/release.sh --publish
+```
+
+It archives a Release build, packs `build/release/<version>/Spanner-<version>.dmg`, signs it, writes a Sparkle `appcast.xml`, and uploads both to a GitHub release on the public [Spanner-releases](https://github.com/hnatien/Spanner-releases) repo, which the app's update feed points at. Leave off `--publish` to build locally only.
+
+- Builds must be signed with a real certificate (`scripts/setup-signing.sh`); ad-hoc builds are refused, since every update would reset users' privacy grants.
+- Sparkle signs updates with an EdDSA key stored in your login keychain. Back it up with `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys -x sparkle-key.backup` and keep the file somewhere safe and out of the repo; without it you can't ship updates to existing installs.
+- With a `Developer ID Application` certificate in the keychain and `NOTARY_PROFILE` set to a `xcrun notarytool store-credentials` profile, the script signs with Developer ID and notarizes, and users skip the Gatekeeper step.
 
 ## Tests
 
