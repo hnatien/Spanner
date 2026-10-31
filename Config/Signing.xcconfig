@@ -1,0 +1,21 @@
+// Code signing for Spanner.
+//
+// macOS ties privacy grants (Accessibility, Screen Recording) to the app's
+// signature. Ad-hoc builds get a new identity on every rebuild, so grants
+// stop matching. With an Apple Development certificate the identity is
+// stable and grants survive rebuilds.
+//
+// To sign with your certificate, create Config/Local.xcconfig (git-ignored):
+//   SPANNER_SIGN_STYLE = Automatic
+//   SPANNER_SIGN_IDENTITY = Apple Development
+//   DEVELOPMENT_TEAM = <your 10-character team ID>
+// Without it, builds fall back to ad-hoc signing.
+
+SPANNER_SIGN_STYLE = Manual
+SPANNER_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
+
+CODE_SIGN_STYLE = $(SPANNER_SIGN_STYLE)
+CODE_SIGN_IDENTITY = $(SPANNER_SIGN_IDENTITY)
