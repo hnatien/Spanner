@@ -4,7 +4,7 @@ struct MainWindow: View {
     @Environment(AppModel.self) private var model
     @Environment(PermissionsManager.self) private var permissions
 
-    private static let featureSections: [AppSection] = [.battery, .switcher, .keepAwake]
+    private static let featureSections: [AppSection] = [.battery, .switcher, .snapping, .mouse, .sound, .displays, .keepAwake]
     private static let appSections: [AppSection] = [.permissions, .general]
 
     var body: some View {
@@ -45,6 +45,10 @@ struct MainWindow: View {
         switch section {
         case .battery: BatteryDashboardPage()
         case .switcher: SwitcherSettingsPage()
+        case .snapping: SnappingPage()
+        case .mouse: MousePage()
+        case .sound: SoundPage()
+        case .displays: DisplaysPage()
         case .keepAwake: KeepAwakePage()
         case .permissions: PermissionsPage()
         case .general: GeneralPage()

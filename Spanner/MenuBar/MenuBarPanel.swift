@@ -26,6 +26,7 @@ struct MenuBarPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(PermissionsManager.self) private var permissions
     @Environment(BatteryService.self) private var battery
+    @Environment(DisplayController.self) private var displays
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -42,6 +43,16 @@ struct MenuBarPanel: View {
                     KeepAwakeMenuRow()
                     Divider()
                     SwitcherMenuRow()
+                }
+            }
+
+            PanelSection {
+                SoundMenuSection()
+            }
+
+            if displays.displays.contains(where: \.hasDDC) {
+                PanelSection {
+                    DisplaysMenuSection()
                 }
             }
 

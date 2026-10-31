@@ -40,6 +40,26 @@
       <sub>No permissions</sub>
     </td>
   </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>⌃⌥←&nbsp; Window snapping</h3>
+      Halves, thirds, quarters and your own grid per display, from shortcuts or by dragging to an edge.
+      <br><br>
+      <sub>Needs Accessibility</sub>
+    </td>
+    <td width="33%" valign="top">
+      <h3>🖱️&nbsp; Mouse &amp; Sound</h3>
+      A wheel direction separate from the trackpad, smooth scrolling and button actions. Per-app volume, device switching and a mic-mute shortcut.
+      <br><br>
+      <sub>Accessibility; System Audio Recording for the mixer</sub>
+    </td>
+    <td width="33%" valign="top">
+      <h3>☀️&nbsp; Displays</h3>
+      Brightness and volume for external monitors over DDC/CI, from sliders or the keyboard's keys, with an on-screen display.
+      <br><br>
+      <sub>Accessibility for the keys only</sub>
+    </td>
+  </tr>
 </table>
 
 <details>
@@ -50,6 +70,7 @@
 - **Window switcher:** per-app window cycling, a configurable trigger and thumbnail size, and a choice of which screen the overlay opens on. It can take over `⌘⇥`, and restores it when Spanner quits or on the next launch after a crash.
 - **Battery:** the power-flow view shows adapter → system → battery from IOKit telemetry, without root. Also shows Magic Keyboard, Mouse and Trackpad batteries.
 - **Keep Awake:** holds an IOKit power assertion, the same mechanism as `caffeinate`.
+- **Battery, energy by app:** power drawn by each app and its helpers, from the kernel's per-process energy counters.
 - **Around them:** onboarding, a permissions page with live status, launch at login, and Sparkle updates (dormant until a signed appcast exists).
 
 </details>
@@ -91,8 +112,13 @@ Spanner/
 ├── Spanner/                 the macOS app (SwiftUI + AppKit)
 │   ├── App/                 entry point, app model, main window, login item
 │   ├── MenuBar/             menu-bar panel and status icon
-│   ├── Switcher/            hotkeys, window inventory, thumbnails, overlay
-│   ├── Battery/             IOKit readers, dashboard, history
+│   ├── Switcher/            window inventory, thumbnails, overlay
+│   ├── Snapping/            window snapping: shortcuts, drag zones, grids
+│   ├── Mouse/               scroll direction, smooth scrolling, buttons
+│   ├── Sound/               per-app volume (process taps), devices, mic mute
+│   ├── Displays/            DDC brightness and volume, media keys
+│   ├── Input/               shared hotkeys, event taps, shortcut recorder
+│   ├── Battery/             IOKit readers, dashboard, history, energy by app
 │   ├── KeepAwake/           power assertions and controls
 │   ├── Permissions/         TCC status and prompts
 │   ├── Onboarding/          first-launch guide
@@ -101,7 +127,7 @@ Spanner/
 │   └── DesignSystem/        tokens and shared components
 ├── Packages/SpannerKit/     testable core logic + CSMC, a tiny AppleSMC shim
 ├── prototypes/              Phase 0 spikes: hotkey, event tap, capture, SMC
-├── docs/                    feasibility research, Phase 0 results, logo
+├── docs/                    feasibility research, Phase 0 and 2 results, logo
 ├── scripts/                 signing setup, icon and logo generator
 └── project.yml              XcodeGen spec (Spanner.xcodeproj is generated)
 ```
@@ -112,6 +138,7 @@ Spanner started from a feasibility study, then a round of throwaway spikes to an
 
 - [**macOS utilities app feasibility**](docs/macOS%20utilities%20app%20feasibility.md): switcher internals, battery APIs, the macOS 27 charge-limit lockdown, 30 QoL modules ranked, distribution, and the roadmap.
 - [**Phase 0 results**](docs/Phase%200%20results.md): what actually works on macOS 27.2, covering the `⌘⇥` takeover, event-tap permissions, SMC keys, and off-screen window capture.
+- [**Phase 2 results**](docs/Phase%202%20results.md): the API checks behind snapping, mouse fixes, per-app volume, DDC and per-app energy, and what is still untested on hardware.
 
 <br>
 

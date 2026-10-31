@@ -125,7 +125,7 @@ private struct PermissionsStep: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             SettingsGroup {
-                ForEach(Permission.allCases) { PermissionRow(permission: $0) }
+                ForEach(Permission.core) { PermissionRow(permission: $0) }
             }
             if permissions.allGranted {
                 Label("All set. The switcher is ready.", systemImage: "checkmark.circle.fill")

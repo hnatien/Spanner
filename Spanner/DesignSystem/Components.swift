@@ -10,10 +10,15 @@ struct SymbolTile: View {
     var tint: Color
     var size: CGFloat = 28
 
+    /// Battery glyphs are wide and their bounds include the terminal nub, so
+    /// they're drawn smaller and nudged right to centre the body optically.
+    private var isBattery: Bool { symbol.hasPrefix("battery.") }
+
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: size * 0.5, weight: .semibold))
+            .font(.system(size: size * (isBattery ? 0.42 : 0.5), weight: .semibold))
             .foregroundStyle(.white)
+            .offset(x: isBattery ? size * 0.04 : 0)
             .frame(width: size, height: size)
             .background(tint.gradient, in: .rect(cornerRadius: size * 0.27, style: .continuous))
             .accessibilityHidden(true)

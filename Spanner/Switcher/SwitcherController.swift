@@ -26,7 +26,7 @@ final class SwitcherController {
     var triggerKeycaps: [String] { settings.trigger.keycaps }
     var previewsAvailable: Bool { permissions.screenRecordingGranted }
 
-    @ObservationIgnored private let hotkeys = HotkeyCenter()
+    @ObservationIgnored private let hotkeys: HotkeyCenter
     @ObservationIgnored private let inventory = WindowInventory()
     @ObservationIgnored private let modifierMonitor = ModifierReleaseMonitor()
     @ObservationIgnored private let capturer = ThumbnailCapturer()
@@ -51,8 +51,9 @@ final class SwitcherController {
         case allWindows, currentApp
     }
 
-    init(permissions: PermissionsManager) {
+    init(permissions: PermissionsManager, hotkeys: HotkeyCenter) {
         self.permissions = permissions
+        self.hotkeys = hotkeys
         inventory.onAccessibilityRefresh = { [weak self] in self?.refreshOpenSession() }
     }
 

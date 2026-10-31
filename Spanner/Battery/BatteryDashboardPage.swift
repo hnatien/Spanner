@@ -22,6 +22,7 @@ struct BatteryDashboardPage: View {
                 }
                 DetailsCard(snapshot: snapshot)
                 BatteryHistoryCard(history: battery.history)
+                EnergyCard()
                 if !battery.accessories.isEmpty {
                     AccessoriesCard(accessories: battery.accessories)
                 }
@@ -31,6 +32,7 @@ struct BatteryDashboardPage: View {
                                    title: "No battery",
                                    message: "This Mac runs on mains power only, so there's no battery to show.")
                 }
+                EnergyCard()
                 if !battery.accessories.isEmpty {
                     AccessoriesCard(accessories: battery.accessories)
                 }

@@ -6,13 +6,19 @@ import Observation
 enum Permission: String, CaseIterable, Identifiable {
     case accessibility
     case screenRecording
+    case systemAudio
 
     var id: Self { self }
+
+    /// Permissions the headline features need, which the menu bar nags
+    /// about. Others are asked for only when their module is turned on.
+    static let core: [Permission] = [.accessibility, .screenRecording]
 
     var title: String {
         switch self {
         case .accessibility: "Accessibility"
         case .screenRecording: "Screen Recording"
+        case .systemAudio: "System Audio Recording"
         }
     }
 
@@ -20,6 +26,7 @@ enum Permission: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: "accessibility"
         case .screenRecording: "rectangle.dashed.badge.record"
+        case .systemAudio: "waveform"
         }
     }
 
@@ -27,18 +34,45 @@ enum Permission: String, CaseIterable, Identifiable {
     var rationale: String {
         switch self {
         case .accessibility:
-            "Lets the switcher see your windows, bring the one you pick to the front, and notice when you release the shortcut."
+            "Lets the switcher see and raise your windows, window snapping move them, mouse fixes adjust scrolling and buttons, and media keys reach external displays."
         case .screenRecording:
             "Lets the switcher show live previews and window titles. Spanner only captures small thumbnails and never records or uploads your screen."
+        case .systemAudio:
+            "Lets the volume mixer turn individual apps up or down. Audio passes straight to your speakers; Spanner never records or saves it."
         }
     }
 
     fileprivate var settingsURL: URL {
+        // System audio is listed in the same pane, under "System Audio
+        // Recording Only".
         let anchor = switch self {
         case .accessibility: "Privacy_Accessibility"
-        case .screenRecording: "Privacy_ScreenCapture"
+        case .screenRecording, .systemAudio: "Privacy_ScreenCapture"
         }
         return URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)")!
+    }
+}
+
+/// System audio capture has no public status API. The TCC SPI below is what
+/// Apple's own tools and AudioCap use; Phase 2 confirmed both symbols exist
+/// on macOS 27.2. Results: 0 granted, 1 denied, 2 not asked yet.
+private enum AudioCaptureAccess {
+    private typealias Preflight = @convention(c) (CFString, CFDictionary?) -> Int32
+    private typealias Request = @convention(c) (CFString, CFDictionary?, @escaping @convention(block) (Bool) -> Void) -> Void
+    private static let service = "kTCCServiceAudioCapture" as CFString
+    private nonisolated(unsafe) static let library = dlopen("/System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC", RTLD_NOW)
+
+    /// Nil when the SPI is unavailable; macOS then prompts on first use.
+    static var isGranted: Bool? {
+        guard let symbol = dlsym(library, "TCCAccessPreflight") else { return nil }
+        return unsafeBitCast(symbol, to: Preflight.self)(service, nil) == 0
+    }
+
+    /// Shows the system prompt. Returns false if the SPI is unavailable.
+    static func request(completion: @escaping @Sendable (Bool) -> Void) -> Bool {
+        guard let symbol = dlsym(library, "TCCAccessRequest") else { return false }
+        unsafeBitCast(symbol, to: Request.self)(service, nil, completion)
+        return true
     }
 }
 
@@ -55,6 +89,7 @@ enum Permission: String, CaseIterable, Identifiable {
 final class PermissionsManager {
     private(set) var accessibilityGranted = false
     private(set) var screenRecordingGranted = false
+    private(set) var systemAudioGranted = false
     /// Permissions the person has already asked for this launch, so the UI
     /// can switch from "Grant" to manual help.
     private(set) var requested: Set<Permission> = []
@@ -69,10 +104,12 @@ final class PermissionsManager {
         switch permission {
         case .accessibility: accessibilityGranted
         case .screenRecording: screenRecordingGranted
+        case .systemAudio: systemAudioGranted
         }
     }
 
-    var allGranted: Bool { Permission.allCases.allSatisfy(isGranted) }
+    /// Whether the headline features have what they need.
+    var allGranted: Bool { Permission.core.allSatisfy(isGranted) }
 
     /// Shows the system prompt where one exists, then opens the matching
     /// System Settings pane so the switch is one click away.
@@ -92,6 +129,11 @@ final class PermissionsManager {
             // prompt appears only once per app, so the row then offers
             // Open Settings and Show in Finder (to add Spanner with +).
             _ = CGRequestScreenCaptureAccess()
+        case .systemAudio:
+            let prompted = AudioCaptureAccess.request { _ in
+                Task { @MainActor [weak self] in self?.refresh() }
+            }
+            if !prompted { openSettings(for: permission) }
         }
         requested.insert(permission)
         refresh()
@@ -107,12 +149,15 @@ final class PermissionsManager {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
 
-    /// Re-reads both permissions. Cheap enough to call every second.
+    /// Re-reads every permission. Cheap enough to call every second.
     func refresh() {
         let accessibility = AXIsProcessTrusted()
         let screen = CGPreflightScreenCaptureAccess() || Self.canSeeOtherWindowTitles()
+        // Without the SPI, assume granted and let macOS prompt on first use.
+        let audio = AudioCaptureAccess.isGranted ?? true
         if accessibility != accessibilityGranted { accessibilityGranted = accessibility }
         if screen != screenRecordingGranted { screenRecordingGranted = screen }
+        if audio != systemAudioGranted { systemAudioGranted = audio }
     }
 
     /// Polls in the background for the lifetime of the app. The interval is

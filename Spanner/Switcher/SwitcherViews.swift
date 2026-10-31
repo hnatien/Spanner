@@ -25,7 +25,7 @@ struct SwitcherSettingsPage: View {
             if settings.isEnabled && !permissions.allGranted {
                 SettingsGroup(title: "Permissions needed",
                               footer: "Accessibility is required. Without Screen Recording the switcher still works, showing app icons instead of previews.") {
-                    ForEach(Permission.allCases.filter { !permissions.isGranted($0) }) { PermissionRow(permission: $0) }
+                    ForEach(Permission.core.filter { !permissions.isGranted($0) }) { PermissionRow(permission: $0) }
                 }
             }
 

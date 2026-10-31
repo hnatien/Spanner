@@ -51,3 +51,20 @@ struct PermissionRow: View {
         .padding(.leading, 24 + Spacing.m)
     }
 }
+
+/// "Permissions needed" group shown at the top of a module's page while
+/// any permission it relies on is missing. Renders nothing once granted.
+struct MissingPermissionsGroup: View {
+    @Environment(PermissionsManager.self) private var permissions
+    let needed: [Permission]
+    let footer: String
+
+    var body: some View {
+        let missing = needed.filter { !permissions.isGranted($0) }
+        if !missing.isEmpty {
+            SettingsGroup(title: "Permissions needed", footer: footer) {
+                ForEach(missing) { PermissionRow(permission: $0) }
+            }
+        }
+    }
+}
