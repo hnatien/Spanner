@@ -1,0 +1,14 @@
+.DS_Store
+build/
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+prototypes/build/
+prototypes/.build/
+Config/Local.xcconfig
+xcuserdata/
+.vscode/
+# Phase 0 captures are real screenshots of the desktop; keep them local.
+prototypes/results/thumbs/
+prototypes/results/*.png
