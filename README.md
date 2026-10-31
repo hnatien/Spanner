@@ -102,7 +102,7 @@ Spanner/
 ├── Packages/SpannerKit/     testable core logic + CSMC, a tiny AppleSMC shim
 ├── prototypes/              Phase 0 spikes: hotkey, event tap, capture, SMC
 ├── docs/                    feasibility research, Phase 0 results, logo
-├── scripts/                 signing setup, icon and logo generators
+├── scripts/                 signing setup, icon and logo generator
 └── project.yml              XcodeGen spec (Spanner.xcodeproj is generated)
 ```
 
