@@ -28,6 +28,7 @@ struct MenuBarPanel: View {
     @Environment(BatteryService.self) private var battery
     @Environment(DisplayController.self) private var displays
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
@@ -116,6 +117,8 @@ struct MenuBarPanel: View {
 
     private func open(_ section: AppSection) {
         model.selectedSection = section
+        // Close the panel so it doesn't sit over the window it just opened.
+        dismiss()
         openWindow(id: WindowID.main)
         // If the window is already open, onAppear won't fire again, so
         // DockPresence never activates the app and the window stays behind
