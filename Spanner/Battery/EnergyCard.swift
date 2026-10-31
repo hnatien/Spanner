@@ -33,8 +33,13 @@ struct EnergyCard: View {
                     VStack(spacing: Spacing.s) {
                         ForEach(shown) { app in
                             EnergyRow(app: app, fraction: app.watts / peak)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                     }
+                    // Animate each sample as one transaction so re-ranked rows
+                    // slide together with their bars instead of the bars
+                    // springing on their own while the labels jump.
+                    .animation(.spanner, value: energy.apps)
                     if energy.apps.count > Self.collapsedCount {
                         Button(showsAll ? "Show Less" : "Show More") {
                             withAnimation(.spanner) { showsAll.toggle() }
@@ -70,10 +75,12 @@ private struct EnergyRow: View {
             MeterBar(fraction: fraction, tint: FeatureTint.battery)
             Text(powerText)
                 .font(.callout.monospacedDigit())
+                .contentTransition(.numericText(value: app.watts))
                 .frame(width: 64, alignment: .trailing)
             Text(energyText)
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
+                .contentTransition(.numericText(value: app.joules))
                 .frame(width: 64, alignment: .trailing)
                 .help("Energy used since Spanner started")
         }
