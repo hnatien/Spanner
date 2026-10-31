@@ -1,0 +1,21 @@
+battery: ExternalConnected=1 IsCharging=1 CurrentCapacity=75 Amperage=1083 NotChargingReason=0x0
+SMC keys:
+  CHTE  missing (SMC result 0x84)
+  CH0B  missing (SMC result 0x84)
+  CH0C  missing (SMC result 0x84)
+  CHIE  size=1  type=hex_ value=00
+  CH0I  missing (SMC result 0x84)
+  CH0J  IOKit error 0xe00002c1
+  ACLC  size=1  type=ui8  value=04
+  bfD0  IOKit error 0xe00002c1
+  bfE0  IOKit error 0xe00002c1
+  bfF0  IOKit error 0xe00002c1
+  CHWA  missing (SMC result 0x84)
+  BCLM  missing (SMC result 0x84)
+  BUIC  size=1  type=ui8  value=4b
+  AC-W  size=1  type=si8  value=02
+  PPBR  size=4  type=flt  value=6e1ec43f
+  PDTR  size=4  type=flt  value=cc62fd41
+  TB1T  size=4  type=flt  value=98990f42
+  TB2T  size=4  type=flt  value=00001242
+  B0AC  size=2  type=si16 value=e304

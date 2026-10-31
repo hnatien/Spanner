@@ -1,0 +1,11 @@
+before: ExternalConnected=1 IsCharging=1 CurrentCapacity=76 Amperage=1209 NotChargingReason=0x0
+write CHIE=08 -> IOKit 0x00000000 SMC 0x00
+  CHIE  size=1  type=hex_ value=08
+t+2s: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000
+t+4s: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000
+t+6s: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000
+t+8s: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000
+t+10s: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000
+restore CHIE -> IOKit 0x00000000 SMC 0x00
+  CHIE  size=1  type=hex_ value=00
+after restore: ExternalConnected=0 IsCharging=0 CurrentCapacity=76 Amperage=1247 NotChargingReason=0x1000

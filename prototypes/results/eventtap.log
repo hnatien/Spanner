@@ -1,0 +1,30 @@
+[  0.00s] mode=flags seconds=12 bundle=dev.spanner.phase0.eventtap-spike
+[  0.02s] before: listenEvent=false postEvent=false ax=false
+[  0.02s] tapCreate -> created
+[  0.03s] after tapCreate: listenEvent=false postEvent=false ax=false
+[  0.03s] press Cmd/Option/Shift and type a few letters now
+[ 12.64s] events received: none
+[ 12.64s] end: listenEvent=false postEvent=false ax=false
+[  0.00s] mode=keys seconds=12 bundle=dev.spanner.phase0.eventtap-spike
+[  0.01s] before: listenEvent=false postEvent=false ax=false
+[  0.03s] tapCreate -> created
+[  0.03s] after tapCreate: listenEvent=false postEvent=false ax=false
+[  0.04s] press Cmd/Option/Shift and type a few letters now
+[ 12.65s] events received: none
+[ 12.65s] end: listenEvent=false postEvent=false ax=false
+user: input-monitoring dialog seen = sasasasasasa
+[  0.00s] mode=keys seconds=3 bundle=dev.spanner.phase0.eventtap-spike
+[  0.01s] before: listenEvent=false postEvent=false ax=false
+[  0.01s] AXIsProcessTrustedWithOptions(prompt) -> false
+[  0.04s] tapCreate -> created
+[  0.04s] after tapCreate: listenEvent=false postEvent=false ax=false
+[  0.04s] press Cmd/Option/Shift and type a few letters now
+[  3.22s] events received: none
+[  3.22s] end: listenEvent=false postEvent=false ax=false
+[  0.00s] mode=keys seconds=12 bundle=dev.spanner.phase0.eventtap-spike
+[  0.02s] before: listenEvent=true postEvent=false ax=false
+[  0.02s] tapCreate -> created
+[  0.02s] after tapCreate: listenEvent=true postEvent=false ax=false
+[  0.02s] press Cmd/Option/Shift and type a few letters now
+[ 12.70s] events received: flagsChanged=6 keyDown=25 keyUp=23
+[ 12.70s] end: listenEvent=true postEvent=false ax=false

@@ -1,0 +1,12 @@
+[  0.03s] run at 2026-10-31T08:25:05Z bundle=dev.spanner.phase0.capture-spike
+[  0.03s] macOS Version 27.2 (Build 26B123)
+[  0.03s] CGPreflightScreenCaptureAccess=false
+[  0.03s] CGRequestScreenCaptureAccess -> false
+[  0.04s] SCShareableContent failed: com.apple.ScreenCaptureKit.SCStreamErrorDomain -3801: The user declined TCCs for application, window, display capture
+[  0.04s] end: CGPreflightScreenCaptureAccess=false
+[  0.07s] run at 2026-10-31T08:25:05Z bundle=dev.spanner.phase0.capture-spike
+[  0.07s] macOS Version 27.2 (Build 26B123)
+[  0.07s] CGPreflightScreenCaptureAccess=false
+[  0.07s] CGRequestScreenCaptureAccess -> false
+[  0.08s] SCShareableContent failed: com.apple.ScreenCaptureKit.SCStreamErrorDomain -3801: The user declined TCCs for application, window, display capture
+[  0.08s] end: CGPreflightScreenCaptureAccess=false

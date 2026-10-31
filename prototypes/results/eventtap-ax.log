@@ -1,0 +1,15 @@
+[  0.00s] mode=keys seconds=2 bundle=dev.spanner.phase0.eventtap-ax
+[  0.02s] before: listenEvent=false postEvent=false ax=false
+[  0.02s] AXIsProcessTrustedWithOptions(prompt) -> false
+[  0.03s] tapCreate -> created
+[  0.03s] after tapCreate: listenEvent=false postEvent=false ax=false
+[  0.03s] press Cmd/Option/Shift and type a few letters now
+[  2.19s] events received: none
+[  2.19s] end: listenEvent=false postEvent=false ax=false
+[  0.00s] mode=keys seconds=12 bundle=dev.spanner.phase0.eventtap-ax
+[  0.01s] before: listenEvent=false postEvent=false ax=false
+[  0.04s] tapCreate -> created
+[  0.04s] after tapCreate: listenEvent=false postEvent=false ax=false
+[  0.04s] press Cmd/Option/Shift and type a few letters now
+[ 12.67s] events received: none
+[ 12.68s] end: listenEvent=false postEvent=false ax=false

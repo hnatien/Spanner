@@ -1,0 +1,7 @@
+[  0.00s] mode=keys seconds=12 bundle=dev.spanner.phase0.eventtap-ax
+[  0.01s] before: listenEvent=true postEvent=true ax=true
+[  0.03s] tapCreate -> created
+[  0.03s] after tapCreate: listenEvent=true postEvent=true ax=true
+[  0.03s] press Cmd/Option/Shift and type a few letters now
+[ 12.65s] events received: flagsChanged=2 keyDown=53 keyUp=52
+[ 12.65s] end: listenEvent=true postEvent=true ax=true

@@ -1,0 +1,48 @@
+[  0.06s] run at 2026-10-31T08:38:21Z bundle=dev.spanner.phase0.capture-spike
+[  0.06s] macOS Version 27.2 (Build 26B123)
+[  0.06s] CGPreflightScreenCaptureAccess=false
+[  0.06s] CGRequestScreenCaptureAccess -> false
+[  0.07s] SCShareableContent failed: com.apple.ScreenCaptureKit.SCStreamErrorDomain -3801: The user declined TCCs for application, window, display capture
+[  0.07s] end: CGPreflightScreenCaptureAccess=false
+[  0.05s] run at 2026-10-31T08:38:32Z bundle=dev.spanner.phase0.capture-spike
+[  0.05s] macOS Version 27.2 (Build 26B123)
+[  0.05s] CGPreflightScreenCaptureAccess=true
+[  0.06s] displays=1 windows(normal)=18 onScreen=2 offScreen=16 withTitles=7
+[  0.10s] ok   off-screen Claude id=2039 640x480 32ms content frame=800x600 title=""
+[  0.10s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2039.png
+[  0.12s] ok   off-screen Code id=2104 640x401 11ms content frame=1470x923 title="Spanner"
+[  0.12s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2104.png
+[  0.13s] ok   off-screen Open and Save Panel Service (Safari) id=2138 640x640 8ms BLANK frame=500x500 title=""
+[  0.13s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2138.png
+[  0.14s] ok   off-screen Safari id=2137 640x410 12ms content frame=767x492 title=""
+[  0.15s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2137.png
+[  0.16s] ok   on-screen System Settings id=2525 640x540 14ms content frame=740x625 title="Screen & System Audio Recording"
+[  0.17s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/on-2525.png
+[  0.18s] ok   off-screen Safari id=2131 640x401 13ms content frame=1470x923 title="Start Page"
+[  0.19s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2131.png
+[  0.20s] ok   off-screen Privacy & Security (System Settings) id=2524 640x540 8ms BLANK frame=740x625 title=""
+[  0.20s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2524.png
+[  0.21s] ok   off-screen Finder id=2054 640x303 10ms content frame=920x436 title="Projects"
+[  0.22s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2054.png
+[  0.23s] ok   on-screen Claude id=2034 640x401 12ms content frame=1470x923 title="Claude"
+[  0.23s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/on-2034.png
+[  0.24s] ok   off-screen loginwindow id=1740 640x640 8ms BLANK frame=500x500 title=""
+[  0.25s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-1740.png
+[  0.26s] ok   off-screen Claude id=2036 640x640 8ms BLANK frame=500x500 title=""
+[  0.26s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-2036.png
+[  0.27s] ok   off-screen AutoFill (Tailscale) id=310 624x474 8ms BLANK frame=312x237 title=""
+[  0.27s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-310.png
+[  0.28s] ok   off-screen Tailscale id=309 631x640 9ms content frame=600x608 title="Tailscale Settings"
+[  0.29s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-309.png
+[  0.29s] ok   off-screen Tailscale id=306 640x640 7ms BLANK frame=500x500 title=""
+[  0.30s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-306.png
+[  0.31s] ok   off-screen Tailscale id=296 640x407 8ms content frame=890x566 title=""
+[  0.31s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-296.png
+[  0.32s] ok   off-screen WeatherMenu id=56 632x640 9ms content frame=332x336 title="WeatherMenu"
+[  0.32s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-56.png
+[  0.33s] ok   off-screen Cloudflare WARP id=48 640x640 8ms content frame=750x750 title=""
+[  0.34s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-48.png
+[  0.35s] ok   off-screen Code id=1996 640x640 8ms BLANK frame=500x500 title=""
+[  0.35s] saved /Users/hnt/Projects/Spanner/prototypes/results/thumbs/off-1996.png
+[  0.35s] RESULT: on-screen ok=2 blank=0 fail=0; off-screen ok=16 blank=7 fail=0
+[  0.35s] end: CGPreflightScreenCaptureAccess=true

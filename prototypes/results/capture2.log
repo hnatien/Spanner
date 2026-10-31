@@ -1,0 +1,32 @@
+[  0.08s] run at 2026-10-31T08:25:45Z bundle=dev.spanner.phase0.capture-spike
+[  0.08s] macOS Version 27.2 (Build 26B123)
+[  0.08s] CGPreflightScreenCaptureAccess=false
+[  0.08s] CGRequestScreenCaptureAccess -> false
+[  0.08s] SCShareableContent failed: com.apple.ScreenCaptureKit.SCStreamErrorDomain -3801: The user declined TCCs for application, window, display capture
+[  0.08s] end: CGPreflightScreenCaptureAccess=false
+[  0.06s] run at 2026-10-31T08:27:41Z bundle=dev.spanner.phase0.capture-spike
+[  0.06s] macOS Version 27.2 (Build 26B123)
+[  0.07s] CGPreflightScreenCaptureAccess=true
+[  0.08s] displays=1 windows(normal)=18 onScreen=5 offScreen=13 withTitles=7
+[  0.13s] ok   on-screen Finder id=2054 640x303 47ms
+[  0.13s] saved /Users/hnt/Projects/Spanner/prototypes/results/capture-onscreen.png
+[  0.15s] ok   on-screen Claude id=2034 640x401 14ms
+[  0.16s] ok   off-screen Safari id=2130 640x640 13ms
+[  0.16s] saved /Users/hnt/Projects/Spanner/prototypes/results/capture-offscreen.png
+[  0.18s] ok   on-screen Code id=2104 640x401 14ms
+[  0.19s] ok   off-screen Open and Save Panel Service (Safari) id=2138 640x640 9ms
+[  0.20s] ok   off-screen Safari id=2137 640x410 13ms
+[  0.22s] ok   on-screen Safari id=2131 640x401 11ms
+[  0.23s] ok   off-screen loginwindow id=1740 640x640 9ms
+[  0.24s] ok   off-screen Claude id=2039 640x480 11ms
+[  0.25s] ok   off-screen Claude id=2036 640x640 10ms
+[  0.26s] ok   off-screen AutoFill (Tailscale) id=310 624x474 11ms
+[  0.27s] ok   off-screen Tailscale id=309 631x640 13ms
+[  0.29s] ok   off-screen Tailscale id=306 640x640 16ms
+[  0.30s] ok   off-screen Tailscale id=296 640x407 14ms
+[  0.32s] ok   off-screen WeatherMenu id=56 632x640 11ms
+[  0.34s] ok   off-screen Cloudflare WARP id=48 640x640 11ms
+[  0.35s] ok   off-screen Code id=1996 640x640 10ms
+[  0.36s] ok   on-screen universalAccessAuthWarn id=2216 640x251 11ms
+[  0.36s] RESULT: on-screen ok=5 fail=0; off-screen ok=13 fail=0
+[  0.36s] end: CGPreflightScreenCaptureAccess=true
