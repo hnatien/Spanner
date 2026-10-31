@@ -121,12 +121,70 @@ fi
 print "Signed with \"$identity\"."
 
 print "Building $dmg…"
+volume="Spanner $version"
+if [[ -e "/Volumes/$volume" ]]; then
+  print -u2 "A volume named \"$volume\" is already mounted. Eject it, then rerun."
+  exit 1
+fi
 stage=$out/dmg-root
-mkdir -p "$stage"
+rw_dmg=$out/Spanner-rw.dmg
+mkdir -p "$stage/.background"
 ditto "$app" "$stage/Spanner.app"
 ln -s /Applications "$stage/Applications"
-hdiutil create -quiet -volname "Spanner $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$dmg"
+swift scripts/make-dmg-background.swift "$stage/.background/background.tiff"
+hdiutil create -quiet -volname "$volume" -srcfolder "$stage" -fs HFS+ -format UDRW -ov "$rw_dmg"
 rm -rf "$stage"
+
+# Lay out the install window in Finder; it saves the layout to the volume's
+# .DS_Store. Icon positions match scripts/make-dmg-background.swift.
+hdiutil attach -quiet -readwrite -noverify -noautoopen "$rw_dmg"
+osascript - "$volume" <<'APPLESCRIPT'
+on run {volumeName}
+  tell application "Finder"
+    tell disk volumeName
+      -- Settings made before the window has finished opening are dropped.
+      open
+      delay 1
+      set current view of container window to icon view
+      set toolbar visible of container window to false
+      set statusbar visible of container window to false
+      set the bounds of container window to {200, 120, 860, 608}
+      set viewOptions to the icon view options of container window
+      set arrangement of viewOptions to not arranged
+      set icon size of viewOptions to 112
+      set text size of viewOptions to 13
+      set background picture of viewOptions to file ".background:background.tiff"
+      set position of item "Spanner.app" of container window to {170, 185}
+      set position of item "Applications" of container window to {490, 185}
+      -- Closing right away drops the view options; give Finder time to
+      -- save them to .DS_Store first.
+      update without registering applications
+      delay 2
+      close
+    end tell
+  end tell
+end run
+APPLESCRIPT
+# Finder writes .DS_Store a moment after the window closes.
+for _ in {1..20}; do
+  grep -qa backgroundImageAlias "/Volumes/$volume/.DS_Store" 2>/dev/null && break
+  sleep 0.5
+done
+if ! grep -qa backgroundImageAlias "/Volumes/$volume/.DS_Store" 2>/dev/null; then
+  hdiutil detach -quiet "/Volumes/$volume"
+  print -u2 "Finder did not save the DMG window layout."
+  exit 1
+fi
+# Finder overwrites .DS_Store with a default layout when the volume
+# unmounts, so put the saved one back through a mount Finder doesn't track.
+cp "/Volumes/$volume/.DS_Store" "$out/layout.DS_Store"
+hdiutil detach -quiet "/Volumes/$volume"
+hdiutil attach -quiet -readwrite -noverify -noautoopen -nobrowse -mountpoint "$out/dmg-mount" "$rw_dmg"
+cp "$out/layout.DS_Store" "$out/dmg-mount/.DS_Store"
+hdiutil detach -quiet "$out/dmg-mount"
+rm -f "$out/layout.DS_Store"
+hdiutil convert -quiet "$rw_dmg" -format UDZO -imagekey zlib-level=9 -ov -o "$dmg"
+rm -f "$rw_dmg"
 if $notarize; then
   codesign --sign "$identity" --timestamp "$dmg"
 else
