@@ -46,10 +46,6 @@ struct MenuBarPanel: View {
                 }
             }
 
-            PanelSection {
-                SoundMenuSection()
-            }
-
             if displays.displays.contains(where: \.hasDDC) {
                 PanelSection {
                     DisplaysMenuSection()

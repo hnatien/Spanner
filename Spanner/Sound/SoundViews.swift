@@ -102,26 +102,22 @@ private struct MixerGroup: View {
     }
 }
 
-/// Icon, name, mute button and slider for one app. Used by the Sound page
-/// and the menu bar panel.
-struct MixerRow: View {
+/// Icon, name, mute button and slider for one app.
+private struct MixerRow: View {
     @Environment(SoundController.self) private var sound
     let app: MixerApp
-    var compact = false
 
     var body: some View {
         let volume = sound.volume(for: app)
         HStack(spacing: Spacing.m) {
-            AppIcon(path: app.bundlePath, size: compact ? 20 : 24)
-            if !compact {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(app.name).lineLimit(1)
-                    Text(app.isPlaying ? "Playing" : "Quiet")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 150, alignment: .leading)
+            AppIcon(path: app.bundlePath, size: 24)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(app.name).lineLimit(1)
+                Text(app.isPlaying ? "Playing" : "Quiet")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            .frame(width: 150, alignment: .leading)
             Button {
                 sound.setVolume(AppVolume(level: volume.level, isMuted: !volume.isMuted), for: app)
             } label: {
@@ -137,13 +133,11 @@ struct MixerRow: View {
                 Text("\(app.name) volume")
             }
             .labelsHidden()
-            .controlSize(compact ? .small : .regular)
             Text(volume.isMuted ? "Muted" : "\(Int((volume.level * 100).rounded()))%")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(width: 40, alignment: .trailing)
         }
-        .help(compact ? app.name : "")
     }
 }
 
@@ -156,59 +150,5 @@ private struct AppIcon: View {
             .resizable()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
-    }
-}
-
-/// Compact sound controls for the menu bar panel: output device, mic mute
-/// and the apps playing right now.
-struct SoundMenuSection: View {
-    @Environment(SoundController.self) private var sound
-    @Environment(PermissionsManager.self) private var permissions
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.m) {
-            HStack(spacing: Spacing.m) {
-                SymbolTile(symbol: sound.defaultOutput?.symbol ?? "speaker.wave.2.fill", tint: FeatureTint.sound, size: 28)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Sound").font(.callout.weight(.medium))
-                    Menu(sound.defaultOutput?.name ?? "No output") {
-                        ForEach(sound.outputDevices) { device in
-                            Button {
-                                sound.selectOutput(device)
-                            } label: {
-                                if device.id == sound.defaultOutputID {
-                                    Label(device.name, systemImage: "checkmark")
-                                } else {
-                                    Text(device.name)
-                                }
-                            }
-                        }
-                    }
-                    .menuStyle(.button)
-                    .buttonStyle(.borderless)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-                }
-                Spacer(minLength: Spacing.s)
-                Button {
-                    sound.toggleMicMute()
-                } label: {
-                    Image(systemName: sound.isMicMuted ? "mic.slash.fill" : "mic.fill")
-                        .foregroundStyle(sound.isMicMuted ? .red : .primary)
-                        .frame(width: 22, height: 22)
-                }
-                .buttonStyle(.borderless)
-                .disabled(sound.defaultInputID == nil)
-                .help(sound.isMicMuted ? "Unmute microphone" : "Mute microphone")
-            }
-            if permissions.systemAudioGranted {
-                ForEach(sound.mixerApps.prefix(4)) { app in
-                    MixerRow(app: app, compact: true)
-                }
-            }
-        }
-        .onAppear { sound.isMixerVisible = true }
-        .onDisappear { sound.isMixerVisible = false }
     }
 }
