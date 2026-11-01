@@ -48,16 +48,17 @@
 ## Install
 
 1. Download the latest `Spanner-<version>.dmg` from [Releases](https://github.com/hnatien/Spanner/releases/latest).
-2. Open the DMG and drag **Spanner** into **Applications**.
-3. Open Spanner. Because the app isn't notarized by Apple yet, macOS blocks the first launch. Go to **System Settings › Privacy & Security**, scroll down to the message about Spanner, and click **Open Anyway**. Or run:
+2. Spanner isn't notarized by Apple yet, so macOS refuses to open the DMG. Before opening it, clear the download's quarantine flag in Terminal:
 
    ```bash
-   xattr -dr com.apple.quarantine /Applications/Spanner.app
+   xattr -d com.apple.quarantine ~/Downloads/Spanner-*.dmg
    ```
 
+   This also clears the app inside, so macOS won't block Spanner's first launch either. To skip Terminal instead, open the DMG, then go to **System Settings › Privacy & Security**, scroll down to the message about it, and click **Open Anyway**. You'll need to do the same again the first time you open Spanner.
+3. Open the DMG, drag **Spanner** into **Applications**, and open it.
 4. Grant the permissions each module asks for (Accessibility, Screen Recording, System Audio Recording) in the onboarding guide.
 
-Later versions arrive through Spanner's built-in updater and don't need step 3 again.
+Later versions arrive through Spanner's built-in updater and don't need step 2 again.
 
 ## Getting started
 
