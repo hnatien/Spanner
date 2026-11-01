@@ -27,6 +27,9 @@ public struct ChargerInfo: Equatable, Sendable {
     public var voltage: Int?
     public var current: Int?
     public var isWireless: Bool
+    /// Plugged into the Mac's MagSafe port. AdapterDetails only describes the
+    /// adapter, so this is set from the port state (see `magSafeConnected`).
+    public var isMagSafe = false
     public var profiles: [PDProfile]
     public var activeProfileIndex: Int?
 
@@ -67,11 +70,22 @@ public struct ChargerInfo: Equatable, Sendable {
         !profiles.isEmpty || (description?.lowercased().contains("pd") ?? false)
     }
 
-    /// Display name, e.g. "34 W USB-C" or "MagSafe charger".
+    /// Display name, e.g. "34 W USB-C" or "68 W MagSafe".
     public var displayName: String {
-        let kind = isWireless ? "Wireless" : isUSBPowerDelivery ? "USB-C" : "Charger"
+        let kind = isWireless ? "Wireless" : isMagSafe ? "MagSafe" : isUSBPowerDelivery ? "USB-C" : "Charger"
         if let watts, watts > 0 { return "\(watts) W \(kind)" }
         return kind
+    }
+
+    /// Whether any of the Mac's `IOAccessoryManager` ports is a connected
+    /// MagSafe port. MagSafe only carries power, so a connection there means
+    /// the charger is on it. USB-C ports can't be read the same way: they all
+    /// list "Power In" in FeaturesEnabled, connected or not.
+    public static func magSafeConnected(ports: [PropertyBag]) -> Bool {
+        ports.contains { port in
+            (port.string("PortTypeDescription")?.hasPrefix("MagSafe") ?? false)
+                && (port.bool("ConnectionActive") ?? false)
+        }
     }
 
     /// Negotiated electrical values, e.g. "20 V × 1.70 A".

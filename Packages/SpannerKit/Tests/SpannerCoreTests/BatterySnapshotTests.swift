@@ -217,6 +217,36 @@ struct ChargerTests {
         #expect(charger.displayName == "60 W Charger")
         #expect(charger.activeProfile == nil)
     }
+
+    @Test func magSafeChargerName() throws {
+        let snapshot = try #require(BatterySnapshot(registry: PropertyBag(BatteryFixtures.charging)))
+        var charger = try #require(snapshot.charger)
+        charger.isMagSafe = true
+        #expect(charger.displayName == "34 W MagSafe")
+        #expect(charger.profiles.count == 5)
+    }
+
+    /// Port properties as seen on a 14" MacBook Pro charging over MagSafe 3.
+    static func port(_ type: String, connected: Bool) -> PropertyBag {
+        PropertyBag(["PortTypeDescription": type, "ConnectionActive": connected,
+                     "FeaturesEnabled": type == "USB-C" ? ["TRM", "LDCM", "Power In"] : ["Power In"]])
+    }
+
+    @Test func magSafeConnectedWhenMagSafePortActive() {
+        let ports = [Self.port("USB-C", connected: false), Self.port("USB-C", connected: false),
+                     Self.port("MagSafe 3", connected: true)]
+        #expect(ChargerInfo.magSafeConnected(ports: ports))
+    }
+
+    @Test func notMagSafeWhenOnlyUSBCConnected() {
+        let ports = [Self.port("USB-C", connected: true), Self.port("MagSafe 3", connected: false)]
+        #expect(!ChargerInfo.magSafeConnected(ports: ports))
+    }
+
+    @Test func notMagSafeWithoutPortData() {
+        #expect(!ChargerInfo.magSafeConnected(ports: []))
+        #expect(!ChargerInfo.magSafeConnected(ports: [PropertyBag(["PortTypeDescription": "MagSafe 3"])]))
+    }
 }
 
 @Suite("Power flow")

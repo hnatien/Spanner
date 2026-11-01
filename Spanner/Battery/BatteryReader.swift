@@ -35,6 +35,9 @@ final class BatteryReader {
         var snapshot = BatterySnapshot(registry: PropertyBag(registry),
                                        powerSource: Self.internalPowerSource().map(PropertyBag.init))
         snapshot?.temperature = temperature()
+        if snapshot?.charger != nil {
+            snapshot?.charger?.isMagSafe = ChargerInfo.magSafeConnected(ports: Self.portProperties().map(PropertyBag.init))
+        }
         return snapshot
     }
 
@@ -58,6 +61,24 @@ final class BatteryReader {
         guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0) == KERN_SUCCESS,
               let properties = unmanaged?.takeRetainedValue() as? [String: Any] else { return nil }
         return properties
+    }
+
+    /// Properties of the Mac's built-in USB-C and MagSafe ports.
+    private static func portProperties() -> [[String: Any]] {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOAccessoryManager"),
+                                           &iterator) == KERN_SUCCESS else { return [] }
+        defer { IOObjectRelease(iterator) }
+
+        var ports: [[String: Any]] = []
+        while case let service = IOIteratorNext(iterator), service != 0 {
+            defer { IOObjectRelease(service) }
+            var unmanaged: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                  let properties = unmanaged?.takeRetainedValue() as? [String: Any] else { continue }
+            ports.append(properties)
+        }
+        return ports
     }
 
     /// The IOPowerSources description of the internal battery.
