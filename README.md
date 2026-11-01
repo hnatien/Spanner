@@ -8,10 +8,10 @@
 
 [![macOS 15+](https://img.shields.io/badge/macOS-15%2B-111111?style=flat-square&logo=apple&logoColor=white)](#getting-started)
 [![Swift 6](https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white)](https://www.swift.org)
-[![Status](https://img.shields.io/badge/status-early%20development-6B5CF6?style=flat-square)](#research)
+![Status](https://img.shields.io/badge/status-early%20development-6B5CF6?style=flat-square)
 [![Distribution](https://img.shields.io/badge/distribution-direct%20only-3FA9F5?style=flat-square)](#getting-started)
 
-[Features](#features) · [Install](#install) · [Getting started](#getting-started) · [Tests](#tests) · [Project layout](#project-layout) · [Research](#research)
+[Features](#features) · [Install](#install) · [Getting started](#getting-started) · [Tests](#tests) · [Project layout](#project-layout)
 
 </div>
 
@@ -19,48 +19,15 @@
 
 ## Features
 
-<table>
-  <tr>
-    <td width="33%" valign="top">
-      <h3>⌥⇥&nbsp; Window switcher</h3>
-      Windows-style switcher with live thumbnails for every window across screens and Spaces, minimized ones included.
-      <br><br>
-      <sub>Needs Accessibility + Screen Recording</sub>
-    </td>
-    <td width="33%" valign="top">
-      <h3>🔋&nbsp; Battery</h3>
-      Health, cycles, temperature, voltage, a live power-flow view, charger wattage and USB-C PD profiles, and charge history.
-      <br><br>
-      <sub>No permissions</sub>
-    </td>
-    <td width="33%" valign="top">
-      <h3>☕&nbsp; Keep Awake</h3>
-      Keeps your Mac, and optionally the display, awake for 15 minutes up to indefinitely, one click from the menu bar.
-      <br><br>
-      <sub>No permissions</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top">
-      <h3>⌃⌥←&nbsp; Window snapping</h3>
-      Halves, thirds, quarters and your own grid per display, from shortcuts or by dragging to an edge.
-      <br><br>
-      <sub>Needs Accessibility</sub>
-    </td>
-    <td width="33%" valign="top">
-      <h3>🖱️&nbsp; Mouse &amp; Sound</h3>
-      A wheel direction separate from the trackpad, smooth scrolling and button actions. Per-app volume, device switching and a mic-mute shortcut.
-      <br><br>
-      <sub>Accessibility; System Audio Recording for the mixer</sub>
-    </td>
-    <td width="33%" valign="top">
-      <h3>☀️&nbsp; Displays</h3>
-      Brightness and volume for external monitors over DDC/CI, from sliders or the keyboard's keys, with an on-screen display.
-      <br><br>
-      <sub>Accessibility for the keys only</sub>
-    </td>
-  </tr>
-</table>
+| Module | What it does | Permissions |
+| :-- | :-- | :-- |
+| 🔋&nbsp;**Battery** | Health, cycles, temperature, voltage, a live power-flow view, charger wattage and USB-C PD profiles, and charge history. | Bluetooth, for headphone battery only |
+| ⌥⇥&nbsp;**Window&nbsp;switcher** | Windows-style switcher with live thumbnails for every window across screens and Spaces, minimized ones included. | Accessibility, Screen Recording |
+| ⌃⌥←&nbsp;**Window&nbsp;snapping** | Halves, thirds, quarters and your own grid per display, from shortcuts or by dragging to an edge. | Accessibility |
+| 🖱️&nbsp;**Mouse** | A wheel direction separate from the trackpad, smooth scrolling and button actions. | Accessibility |
+| 🔊&nbsp;**Sound** | Per-app volume, device switching and a mic-mute shortcut. | System Audio Recording, for per-app volume only |
+| ☀️&nbsp;**Displays** | Brightness and volume for external monitors over DDC/CI, from sliders or the keyboard's keys, with an on-screen display. | Accessibility, for the keyboard's keys only |
+| ☕&nbsp;**Keep&nbsp;Awake** | Keeps your Mac, and optionally the display, awake for 15 minutes up to indefinitely, one click from the menu bar. | None |
 
 <details>
 <summary><b>More detail</b></summary>
@@ -111,20 +78,6 @@ open Spanner.xcodeproj
 > [!TIP]
 > macOS ties Accessibility and Screen Recording grants to the app's code signature. Ad-hoc builds get a new identity on every rebuild, so grants stop matching. Run `scripts/setup-signing.sh` once to sign with your Apple Development certificate and keep grants across rebuilds. It writes the git-ignored `Config/Local.xcconfig`; without it, builds fall back to ad-hoc signing.
 
-## Releasing
-
-Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` (Sparkle compares the build number, so it must go up every release), commit, then:
-
-```bash
-scripts/release.sh --publish
-```
-
-It archives a Release build, packs `build/release/<version>/Spanner-<version>.dmg`, signs it, writes a Sparkle `appcast.xml`, and uploads both to a GitHub release on this repo, tagged at `HEAD`, which the app's update feed points at. Push first. Leave off `--publish` to build locally only.
-
-- Builds must be signed with a real certificate (`scripts/setup-signing.sh`); ad-hoc builds are refused, since every update would reset users' privacy grants.
-- Sparkle signs updates with an EdDSA key stored in your login keychain. Back it up with `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys -x sparkle-key.backup` and keep the file somewhere safe and out of the repo; without it you can't ship updates to existing installs.
-- With a `Developer ID Application` certificate in the keychain and `NOTARY_PROFILE` set to a `xcrun notarytool store-credentials` profile, the script signs with Developer ID and notarizes, and users skip the Gatekeeper step.
-
 ## Tests
 
 Platform-independent logic lives in the `SpannerKit` package, so it can be tested without the app:
@@ -159,14 +112,6 @@ Spanner/
 ├── scripts/                 signing setup, icon and logo generator
 └── project.yml              XcodeGen spec (Spanner.xcodeproj is generated)
 ```
-
-## Research
-
-Spanner started from a feasibility study, then a round of throwaway spikes to answer the open questions before building:
-
-- [**macOS utilities app feasibility**](docs/macOS%20utilities%20app%20feasibility.md): switcher internals, battery APIs, the macOS 27 charge-limit lockdown, 30 QoL modules ranked, distribution, and the roadmap.
-- [**Phase 0 results**](docs/Phase%200%20results.md): what actually works on macOS 27.2, covering the `⌘⇥` takeover, event-tap permissions, SMC keys, and off-screen window capture.
-- [**Phase 2 results**](docs/Phase%202%20results.md): the API checks behind snapping, mouse fixes, per-app volume, DDC and per-app energy, and what is still untested on hardware.
 
 <br>
 
