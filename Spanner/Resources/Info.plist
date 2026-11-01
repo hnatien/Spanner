@@ -31,7 +31,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>SUFeedURL</key>
-	<string>https://github.com/hnatien/Spanner-releases/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/hnatien/Spanner/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>2BJ6J+ARiMqersaArguRsihLZW0c8quvtMIMPZmUhto=</string>
 </dict>

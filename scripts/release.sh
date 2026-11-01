@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Builds a Spanner release into build/release/<version>/: a signed DMG and a
 # Sparkle appcast that lists it. With --publish, uploads both to a GitHub
-# release on the public releases repo, where the app's SUFeedURL points.
+# release on this repo, tagged at HEAD, where the app's SUFeedURL points.
 #
 #   scripts/release.sh [--publish]
 #
@@ -18,7 +18,7 @@
 set -euo pipefail
 cd "${0:A:h}/.."
 
-repo=hnatien/Spanner-releases
+repo=hnatien/Spanner
 feed="https://github.com/$repo/releases/latest/download/appcast.xml"
 derived=build/DerivedData
 sparkle_bin=$derived/SourcePackages/artifacts/sparkle/Sparkle/bin
@@ -65,9 +65,8 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 if $publish; then
-  if ! gh repo view "$repo" >/dev/null 2>&1; then
-    print -u2 "GitHub repo $repo not found. Create it (public) first:"
-    print -u2 "  gh repo create $repo --public --description \"Spanner downloads and update feed\""
+  if ! git merge-base --is-ancestor HEAD "origin/$(git branch --show-current)" 2>/dev/null; then
+    print -u2 "HEAD isn't pushed. Push it first so the release tag points at a published commit."
     exit 1
   fi
   if gh release view "$tag" -R "$repo" >/dev/null 2>&1; then
@@ -222,7 +221,7 @@ print "Generating appcast…"
 
 if $publish; then
   print "Publishing $tag to $repo…"
-  gh release create "$tag" -R "$repo" --title "Spanner $version" \
+  gh release create "$tag" -R "$repo" --target "$(git rev-parse HEAD)" --title "Spanner $version" \
     --notes "$(release_notes)" "$dmg" "$out/appcast.xml"
   print "Published https://github.com/$repo/releases/tag/$tag"
 else

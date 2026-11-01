@@ -80,7 +80,7 @@
 
 ## Install
 
-1. Download the latest `Spanner-<version>.dmg` from [Releases](https://github.com/hnatien/Spanner-releases/releases/latest).
+1. Download the latest `Spanner-<version>.dmg` from [Releases](https://github.com/hnatien/Spanner/releases/latest).
 2. Open the DMG and drag **Spanner** into **Applications**.
 3. Open Spanner. Because the app isn't notarized by Apple yet, macOS blocks the first launch. Go to **System Settings › Privacy & Security**, scroll down to the message about Spanner, and click **Open Anyway**. Or run:
 
@@ -119,7 +119,7 @@ Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` (Sparkle
 scripts/release.sh --publish
 ```
 
-It archives a Release build, packs `build/release/<version>/Spanner-<version>.dmg`, signs it, writes a Sparkle `appcast.xml`, and uploads both to a GitHub release on the public [Spanner-releases](https://github.com/hnatien/Spanner-releases) repo, which the app's update feed points at. Leave off `--publish` to build locally only.
+It archives a Release build, packs `build/release/<version>/Spanner-<version>.dmg`, signs it, writes a Sparkle `appcast.xml`, and uploads both to a GitHub release on this repo, tagged at `HEAD`, which the app's update feed points at. Push first. Leave off `--publish` to build locally only.
 
 - Builds must be signed with a real certificate (`scripts/setup-signing.sh`); ad-hoc builds are refused, since every update would reset users' privacy grants.
 - Sparkle signs updates with an EdDSA key stored in your login keychain. Back it up with `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys -x sparkle-key.backup` and keep the file somewhere safe and out of the repo; without it you can't ship updates to existing installs.
