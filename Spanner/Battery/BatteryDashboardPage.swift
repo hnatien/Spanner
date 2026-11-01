@@ -4,6 +4,7 @@ import SwiftUI
 /// Main-window battery dashboard.
 struct BatteryDashboardPage: View {
     @Environment(BatteryService.self) private var battery
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
         Page {
@@ -40,7 +41,11 @@ struct BatteryDashboardPage: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
-        .onAppear { battery.isDashboardVisible = true }
+        // Fast polling only while the window is in the active app: each
+        // sample animates numbers across the page, which costs ~20% of a
+        // core when the dashboard is left open behind other windows.
+        .onAppear { battery.isDashboardVisible = appearsActive }
+        .onChange(of: appearsActive) { _, active in battery.isDashboardVisible = active }
         .onDisappear { battery.isDashboardVisible = false }
     }
 }

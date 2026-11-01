@@ -47,7 +47,10 @@ final class EnergyMonitor {
                 let samples = await Task.detached { sampler.sample() }.value
                 guard let self, !Task.isCancelled else { return }
                 let result = self.accumulator.update(samples, at: ProcessInfo.processInfo.systemUptime)
-                if !result.isEmpty {
+                // Background samples only keep the totals going. Publishing
+                // them would animate the energy list behind other windows;
+                // becoming visible reschedules and publishes at once.
+                if self.isVisible, !result.isEmpty {
                     self.apps = result
                     self.lastSample = .now
                 }

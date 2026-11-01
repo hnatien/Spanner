@@ -6,6 +6,7 @@ import SwiftUI
 /// Spanner started.
 struct EnergyCard: View {
     @Environment(EnergyMonitor.self) private var energy
+    @Environment(\.appearsActive) private var appearsActive
     @State private var showsAll = false
 
     private static let collapsedCount = 6
@@ -54,7 +55,10 @@ struct EnergyCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .onAppear { energy.isVisible = true }
+        // Like the battery dashboard, sample fast only while the window is in
+        // the active app.
+        .onAppear { energy.isVisible = appearsActive }
+        .onChange(of: appearsActive) { _, active in energy.isVisible = active }
         .onDisappear { energy.isVisible = false }
     }
 }
