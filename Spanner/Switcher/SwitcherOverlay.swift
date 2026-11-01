@@ -145,6 +145,9 @@ private struct SwitcherTile: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(width: metrics.tileWidth, height: OverlayMetrics.titleHeight)
+                // An animated weight builds a new variable-font instance and
+                // re-rasterizes every glyph each frame; switch it instantly.
+                .transaction { $0.animation = nil }
         }
         .padding(OverlayMetrics.cellPadding)
         .background {

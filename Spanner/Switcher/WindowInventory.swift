@@ -178,8 +178,28 @@ final class WindowInventory {
         NSApp.activate()
     }
 
+    /// The app's icon as a fixed bitmap. App icons are IconServices images
+    /// that SwiftUI re-renders on every frame, which made cycling the
+    /// switcher with a held Tab cost a large share of a CPU core.
     func icon(for pid: pid_t) -> NSImage {
-        NSRunningApplication(processIdentifier: pid)?.icon ?? NSWorkspace.shared.icon(for: .application)
+        let icon = NSRunningApplication(processIdentifier: pid)?.icon ?? NSWorkspace.shared.icon(for: .application)
+        return Self.rasterized(icon)
+    }
+
+    /// Draws `icon` once at 128 px, enough for the 56 pt tile icon on Retina.
+    private static func rasterized(_ icon: NSImage) -> NSImage {
+        let pixels = 128
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return icon
+        }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        icon.draw(in: CGRect(x: 0, y: 0, width: pixels, height: pixels))
+        NSGraphicsContext.restoreGraphicsState()
+        guard let image = context.makeImage() else { return icon }
+        return NSImage(cgImage: image, size: NSSize(width: pixels / 2, height: pixels / 2))
     }
 
     private static let ownPID = ProcessInfo.processInfo.processIdentifier
