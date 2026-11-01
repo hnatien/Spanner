@@ -16,6 +16,18 @@ nonisolated func CGSIsSymbolicHotKeyEnabled(_ hotKey: Int32) -> Bool
 @_silgen_name("_AXUIElementGetWindow")
 nonisolated func _AXUIElementGetWindow(_ element: AXUIElement, _ windowID: UnsafeMutablePointer<CGWindowID>) -> AXError
 
+@_silgen_name("CGSMainConnectionID")
+nonisolated func CGSMainConnectionID() -> Int32
+
+/// The Spaces holding each window; empty for windows ordered out.
+/// Mask 7 = all Space kinds.
+@_silgen_name("CGSCopySpacesForWindows")
+nonisolated func CGSCopySpacesForWindows(_ connection: Int32, _ mask: Int32, _ windowIDs: CFArray) -> Unmanaged<CFArray>?
+
+/// Per display: its Spaces and the one currently shown.
+@_silgen_name("CGSCopyManagedDisplaySpaces")
+nonisolated func CGSCopyManagedDisplaySpaces(_ connection: Int32) -> Unmanaged<CFArray>?
+
 /// Owns the macOS Command-Tab shortcut while the Command-Tab trigger is in
 /// use. See `SystemSwitcherPolicy` for why the ledger exists.
 enum SystemSwitcher {

@@ -38,9 +38,22 @@ struct SystemSwitcherPolicyTests {
 @Suite("Window list")
 struct WindowListTests {
     func window(_ id: UInt32, pid: Int32 = 10, title: String = "Doc", size: Double = 500, layer: Int = 0,
-                onScreen: Bool = true, ax: Bool = true, minimized: Bool = false) -> WindowCandidate {
+                onScreen: Bool = true, ax: Bool = true, minimized: Bool = false,
+                orderedOut: Bool = false) -> WindowCandidate {
         WindowCandidate(id: id, pid: pid, appName: "App", title: title, width: size, height: size, layer: layer,
-                        isOnScreen: onScreen, hasAXElement: ax, isMinimized: minimized)
+                        isOnScreen: onScreen, hasAXElement: ax, isMinimized: minimized, isOrderedOut: orderedOut)
+    }
+
+    @Test func closedButRetainedWindowsAreDropped() {
+        let candidates = [
+            window(1),
+            window(2, onScreen: false, ax: false, orderedOut: true),
+            window(3, onScreen: false, orderedOut: true),
+            window(4, onScreen: false),
+            window(5, onScreen: false, minimized: true, orderedOut: true),
+        ]
+        let list = WindowListBuilder.build(candidates, zOrder: [1], appRecency: [], options: .init())
+        #expect(list.map(\.id) == [1, 4, 5])
     }
 
     @Test func visibleWindowsFollowZOrder() {

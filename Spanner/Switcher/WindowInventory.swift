@@ -105,6 +105,7 @@ final class WindowInventory {
         let zOrder = Self.windowInfo([.optionOnScreenOnly, .excludeDesktopElements])
             .compactMap { $0[kCGWindowNumber as String] as? CGWindowID }
 
+        let visibleSpaces = Self.visibleSpaces()
         var sizes: [CGWindowID: CGSize] = [:]
         let candidates: [WindowCandidate] = all.compactMap { info in
             guard let id = info[kCGWindowNumber as String] as? CGWindowID,
@@ -115,15 +116,18 @@ final class WindowInventory {
             let ax = axCache[pid]?[id]
             let ownWindow = pid == Self.ownPID ? NSApp.window(withWindowNumber: Int(id)) : nil
             let serverName = info[kCGWindowName as String] as? String ?? ""
+            let isOnScreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
             sizes[id] = bounds.size
             return WindowCandidate(id: id, pid: pid, appName: app.localizedName ?? "",
                                    title: ownWindow?.title
                                        ?? ax.map(\.title).flatMap { $0.isEmpty ? nil : $0 } ?? serverName,
                                    width: bounds.width, height: bounds.height,
                                    layer: info[kCGWindowLayer as String] as? Int ?? 0,
-                                   isOnScreen: info[kCGWindowIsOnscreen as String] as? Bool ?? false,
+                                   isOnScreen: isOnScreen,
                                    hasAXElement: ax != nil || ownWindow != nil,
-                                   isMinimized: ownWindow?.isMiniaturized ?? ax?.isMinimized ?? false)
+                                   isMinimized: ownWindow?.isMiniaturized ?? ax?.isMinimized ?? false,
+                                   isOrderedOut: !isOnScreen && !app.isHidden
+                                       && Self.isOrderedOut(id, visibleSpaces: visibleSpaces))
         }
 
         return WindowListBuilder.build(candidates, zOrder: zOrder, appRecency: appRecency, options: options).map {
@@ -210,6 +214,20 @@ final class WindowInventory {
     /// layer 0 and are filtered out by WindowListBuilder.
     private static func regularApps() -> [NSRunningApplication] {
         NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+    }
+
+    /// An off-screen window that is on no Space, or on one being shown,
+    /// has been ordered out rather than left on another Space.
+    private static func isOrderedOut(_ id: CGWindowID, visibleSpaces: Set<Int>) -> Bool {
+        guard let spaces = CGSCopySpacesForWindows(CGSMainConnectionID(), 7, [id] as CFArray)?
+            .takeRetainedValue() as? [Int] else { return false }
+        return spaces.isEmpty || !visibleSpaces.isDisjoint(with: spaces)
+    }
+
+    /// The Space each display is showing.
+    private static func visibleSpaces() -> Set<Int> {
+        let displays = CGSCopyManagedDisplaySpaces(CGSMainConnectionID())?.takeRetainedValue() as? [[String: Any]] ?? []
+        return Set(displays.compactMap { ($0["Current Space"] as? [String: Any])?["ManagedSpaceID"] as? Int })
     }
 
     private static func windowInfo(_ options: CGWindowListOption) -> [[String: Any]] {
