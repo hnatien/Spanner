@@ -45,6 +45,9 @@ struct BatteryMenuSummary: View {
                     .padding(.top, Spacing.xxs)
                 }
             }
+            // Without priority the HStack splits the free width between this
+            // column and the Spacer, wrapping the status text at half width.
+            .layoutPriority(1)
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
