@@ -8,6 +8,7 @@ import SwiftUI
 final class AppModel {
     let permissions = PermissionsManager()
     let battery = BatteryService()
+    let headphones: HeadphoneMonitor
     let energy = EnergyMonitor()
     let keepAwake = KeepAwakeController()
     let updates = UpdatesController()
@@ -25,6 +26,7 @@ final class AppModel {
     var selectedSection: AppSection = .battery
 
     init() {
+        headphones = HeadphoneMonitor(permissions: permissions)
         switcher = SwitcherController(permissions: permissions, hotkeys: hotkeys)
         snapping = SnapController(permissions: permissions, hotkeys: hotkeys)
         mouse = MouseController(permissions: permissions)
@@ -35,6 +37,7 @@ final class AppModel {
     func start() {
         permissions.startMonitoring()
         battery.start()
+        headphones.start()
         energy.start()
         switcher.start()
         snapping.start()
@@ -52,6 +55,7 @@ final class AppModel {
         switcher.stop()
         keepAwake.stop()
         energy.stop()
+        headphones.stop()
         battery.stop()
         permissions.stopMonitoring()
     }
@@ -118,6 +122,7 @@ extension View {
             .environment(model)
             .environment(model.permissions)
             .environment(model.battery)
+            .environment(model.headphones)
             .environment(model.energy)
             .environment(model.keepAwake)
             .environment(model.updates)

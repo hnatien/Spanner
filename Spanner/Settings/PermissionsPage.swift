@@ -14,7 +14,7 @@ struct PermissionsPage: View {
             }
 
             SettingsGroup(title: "Window Switcher",
-                          footer: "Battery and Keep Awake need no permissions. Spanner never sends anything off your Mac.") {
+                          footer: "Keep Awake and the Mac's battery need no permissions; headphone battery needs Bluetooth. Spanner never sends anything off your Mac.") {
                 ForEach(Permission.allCases) { PermissionRow(permission: $0) }
             }
 

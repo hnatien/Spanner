@@ -18,6 +18,7 @@
 		196EB64DFD2364B74D6181B3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8594D7545A9C04D0F47805 /* Sparkle */; };
 		19D9D8DDE8E6E54016EEA02B /* BatteryMenuSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72F255468277F0C24EB72CA /* BatteryMenuSummary.swift */; };
 		205B6CAAFF72789CD187799C /* SnappingPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8AFEEF3909FC67ABDD8B476 /* SnappingPage.swift */; };
+		2F16490A7BB12CC4D2889FC6 /* HeadphoneMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E003EF2023BCE3F38A41313F /* HeadphoneMonitor.swift */; };
 		39CFAED8E9BE24824290C6D8 /* DDCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4753EB855946615C3D87728 /* DDCService.swift */; };
 		3D8B9AA779EDAF1EC69761E5 /* ModifierReleaseMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814AC941A41F4A81BFCC30BF /* ModifierReleaseMonitor.swift */; };
 		43D6B962074B408DFB265766 /* HotkeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CF17AD2121ACD32836961A /* HotkeyCenter.swift */; };
@@ -55,6 +56,7 @@
 		B03689533D3E8C2383EE758E /* SnapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF77C976B59ACA23A7610869 /* SnapSettings.swift */; };
 		B2961DD737FF80D55D0FA166 /* EnergyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750845BD8B0D4AEBBD5FAE15 /* EnergyMonitor.swift */; };
 		B4E6C279DF47CC94554FE84C /* SnapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12F9834049FDEB1EC223E5D3 /* SnapController.swift */; };
+		B94B10DEA19D5EB8DE72514C /* HeadphoneReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB2DB8EFAFF332B1D50CBE /* HeadphoneReader.swift */; };
 		D2D2C8347B49715DCFE5C1A7 /* CSMC in Frameworks */ = {isa = PBXBuildFile; productRef = EA8439917037E298AA43656D /* CSMC */; };
 		DD077315BAA03613D8A96C16 /* MenuBarPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E94A45C85843AD30A1B32841 /* MenuBarPanel.swift */; };
 		DE51AC0C52F77DF8DEE466C1 /* ShortcutRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8FE424DB7BFC8ACC79AB3F8 /* ShortcutRecorder.swift */; };
@@ -88,6 +90,7 @@
 		2907643A1A168CA91B095224 /* LoginItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemController.swift; sourceTree = "<group>"; };
 		2A4D9A10F204258F23B66517 /* HUDPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDPanel.swift; sourceTree = "<group>"; };
 		2FDBA47EBBB58220E3E450E8 /* MouseSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseSettings.swift; sourceTree = "<group>"; };
+		31BB2DB8EFAFF332B1D50CBE /* HeadphoneReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphoneReader.swift; sourceTree = "<group>"; };
 		3587ED6E56C828C45B3F312D /* AppVolumeTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVolumeTap.swift; sourceTree = "<group>"; };
 		36EECFF681F93AE27896A747 /* Spanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		387DD310BDE8F63BBB58AD31 /* SoundViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundViews.swift; sourceTree = "<group>"; };
@@ -126,6 +129,7 @@
 		D772E77AB4FB3BF5D4DAE459 /* GeneralPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPage.swift; sourceTree = "<group>"; };
 		D9B191233481F2A492985C52 /* SwitcherSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherSettings.swift; sourceTree = "<group>"; };
 		DDA241E35C785B75B0453D8E /* SwitcherController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherController.swift; sourceTree = "<group>"; };
+		E003EF2023BCE3F38A41313F /* HeadphoneMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphoneMonitor.swift; sourceTree = "<group>"; };
 		E0E37B1FFDEE2EC821C5B5C9 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		E5CF17AD2121ACD32836961A /* HotkeyCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyCenter.swift; sourceTree = "<group>"; };
 		E8AFEEF3909FC67ABDD8B476 /* SnappingPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappingPage.swift; sourceTree = "<group>"; };
@@ -363,6 +367,8 @@
 				9535D2183E6EE317F5CAED6A /* BatteryVisuals.swift */,
 				27DC8DF789FD1EE14A3EEE3D /* EnergyCard.swift */,
 				750845BD8B0D4AEBBD5FAE15 /* EnergyMonitor.swift */,
+				E003EF2023BCE3F38A41313F /* HeadphoneMonitor.swift */,
+				31BB2DB8EFAFF332B1D50CBE /* HeadphoneReader.swift */,
 			);
 			path = Battery;
 			sourceTree = "<group>";
@@ -474,6 +480,8 @@
 				A1DF8C855D9B10BA3C10AB11 /* EventTap.swift in Sources */,
 				6B88F07E2E392CCE767796AA /* GeneralPage.swift in Sources */,
 				7D7169A7270E80B97AAA3131 /* HUDPanel.swift in Sources */,
+				2F16490A7BB12CC4D2889FC6 /* HeadphoneMonitor.swift in Sources */,
+				B94B10DEA19D5EB8DE72514C /* HeadphoneReader.swift in Sources */,
 				43D6B962074B408DFB265766 /* HotkeyCenter.swift in Sources */,
 				E6BA7D0F4BB3092ACBFC0150 /* KeepAwakeController.swift in Sources */,
 				A4F434FA4E59379BB1000CF7 /* KeepAwakeViews.swift in Sources */,

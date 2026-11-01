@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>Spanner's volume mixer adjusts the level of individual apps. Audio goes straight to your speakers and is never recorded.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Spanner reads your AirPods' and headphones' battery and shows it when you put them on. Nothing leaves your Mac.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>SUFeedURL</key>

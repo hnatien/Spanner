@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import CoreBluetooth
 import Observation
 
 /// A privacy permission a Spanner module can need.
@@ -7,6 +8,7 @@ enum Permission: String, CaseIterable, Identifiable {
     case accessibility
     case screenRecording
     case systemAudio
+    case bluetooth
 
     var id: Self { self }
 
@@ -19,6 +21,7 @@ enum Permission: String, CaseIterable, Identifiable {
         case .accessibility: "Accessibility"
         case .screenRecording: "Screen Recording"
         case .systemAudio: "System Audio Recording"
+        case .bluetooth: "Bluetooth"
         }
     }
 
@@ -27,6 +30,7 @@ enum Permission: String, CaseIterable, Identifiable {
         case .accessibility: "accessibility"
         case .screenRecording: "rectangle.dashed.badge.record"
         case .systemAudio: "waveform"
+        case .bluetooth: "headphones"
         }
     }
 
@@ -39,6 +43,8 @@ enum Permission: String, CaseIterable, Identifiable {
             "Lets the switcher show live previews and window titles. Spanner only captures small thumbnails and never records or uploads your screen."
         case .systemAudio:
             "Lets the volume mixer turn individual apps up or down. Audio passes straight to your speakers; Spanner never records or saves it."
+        case .bluetooth:
+            "Lets Spanner read your AirPods' and headphones' battery and notice when you put them on."
         }
     }
 
@@ -48,6 +54,7 @@ enum Permission: String, CaseIterable, Identifiable {
         let anchor = switch self {
         case .accessibility: "Privacy_Accessibility"
         case .screenRecording, .systemAudio: "Privacy_ScreenCapture"
+        case .bluetooth: "Privacy_Bluetooth"
         }
         return URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)")!
     }
@@ -90,11 +97,15 @@ final class PermissionsManager {
     private(set) var accessibilityGranted = false
     private(set) var screenRecordingGranted = false
     private(set) var systemAudioGranted = false
+    private(set) var bluetoothGranted = false
     /// Permissions the person has already asked for this launch, so the UI
     /// can switch from "Grant" to manual help.
     private(set) var requested: Set<Permission> = []
 
     @ObservationIgnored private var pollTask: Task<Void, Never>?
+    /// Creating a central manager is what shows the Bluetooth prompt; it's
+    /// kept so the prompt stays up until answered.
+    @ObservationIgnored private var bluetoothPrompt: CBCentralManager?
 
     init() {
         refresh()
@@ -105,6 +116,7 @@ final class PermissionsManager {
         case .accessibility: accessibilityGranted
         case .screenRecording: screenRecordingGranted
         case .systemAudio: systemAudioGranted
+        case .bluetooth: bluetoothGranted
         }
     }
 
@@ -134,6 +146,14 @@ final class PermissionsManager {
                 Task { @MainActor [weak self] in self?.refresh() }
             }
             if !prompted { openSettings(for: permission) }
+        case .bluetooth:
+            // macOS prompts only while undecided; after a denial the switch
+            // is in Settings.
+            if CBManager.authorization == .notDetermined {
+                bluetoothPrompt = CBCentralManager(delegate: nil, queue: nil)
+            } else {
+                openSettings(for: permission)
+            }
         }
         requested.insert(permission)
         refresh()
@@ -155,9 +175,11 @@ final class PermissionsManager {
         let screen = CGPreflightScreenCaptureAccess() || Self.canSeeOtherWindowTitles()
         // Without the SPI, assume granted and let macOS prompt on first use.
         let audio = AudioCaptureAccess.isGranted ?? true
+        let bluetooth = CBManager.authorization == .allowedAlways
         if accessibility != accessibilityGranted { accessibilityGranted = accessibility }
         if screen != screenRecordingGranted { screenRecordingGranted = screen }
         if audio != systemAudioGranted { systemAudioGranted = audio }
+        if bluetooth != bluetoothGranted { bluetoothGranted = bluetooth }
     }
 
     /// Polls in the background for the lifetime of the app. The interval is
