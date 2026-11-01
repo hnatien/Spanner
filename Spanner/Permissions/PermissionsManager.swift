@@ -92,6 +92,10 @@ private enum AudioCaptureAccess {
 ///   other apps' window titles are visible (a passive check with no prompt).
 /// - `CGRequestScreenCaptureAccess()` returns immediately instead of waiting,
 ///   so the UI must keep polling after asking.
+/// The window-title check can pass while ScreenCaptureKit still refuses (for
+/// example when the app's binary was replaced on disk after launch, so its
+/// signature no longer matches the grant). Each refused capture shows the
+/// system alert, so a refusal counts as not granted until relaunch.
 @Observable
 final class PermissionsManager {
     private(set) var accessibilityGranted = false
@@ -102,6 +106,8 @@ final class PermissionsManager {
     /// can switch from "Grant" to manual help.
     private(set) var requested: Set<Permission> = []
 
+    /// Set when ScreenCaptureKit declined a capture this launch.
+    @ObservationIgnored private var screenCaptureRefused = false
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     /// Creating a central manager is what shows the Bluetooth prompt; it's
     /// kept so the prompt stays up until answered.
@@ -159,6 +165,13 @@ final class PermissionsManager {
         refresh()
     }
 
+    /// Called when ScreenCaptureKit refuses despite the passive check, so
+    /// the switcher stops capturing (and macOS stops alerting) this launch.
+    func noteScreenCaptureRefused() {
+        screenCaptureRefused = true
+        refresh()
+    }
+
     func openSettings(for permission: Permission) {
         NSWorkspace.shared.open(permission.settingsURL)
     }
@@ -172,7 +185,7 @@ final class PermissionsManager {
     /// Re-reads every permission. Cheap enough to call every second.
     func refresh() {
         let accessibility = AXIsProcessTrusted()
-        let screen = CGPreflightScreenCaptureAccess() || Self.canSeeOtherWindowTitles()
+        let screen = !screenCaptureRefused && (CGPreflightScreenCaptureAccess() || Self.canSeeOtherWindowTitles())
         // Without the SPI, assume granted and let macOS prompt on first use.
         let audio = AudioCaptureAccess.isGranted ?? true
         let bluetooth = CBManager.authorization == .allowedAlways

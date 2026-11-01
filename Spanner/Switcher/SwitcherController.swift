@@ -280,14 +280,15 @@ final class SwitcherController {
         let pixelWidth = Int(session.metrics.tileWidth * scale)
         let live = Set(session.windows.map(\.id))
         let pruneAll = session.mode == .allWindows
-        captureTask = Task { [capturer] in
+        captureTask = Task { [capturer, permissions] in
             if pruneAll { await capturer.prune(keeping: live) }
-            await capturer.capture(ids, maxPixelWidth: pixelWidth) { id, image in
+            let allowed = await capturer.capture(ids, maxPixelWidth: pixelWidth) { id, image in
                 guard let image else { return }
                 withAnimation(.easeOut(duration: 0.15)) {
                     session.thumbnails[id] = NSImage(cgImage: image, size: .zero)
                 }
             }
+            if !allowed { permissions.noteScreenCaptureRefused() }
         }
     }
 

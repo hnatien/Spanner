@@ -22,11 +22,13 @@ actor ThumbnailCapturer {
 
     /// Captures `ids` in order, reporting each image (nil when blank or
     /// failed) through `deliver`. Stops early if the calling task is cancelled.
+    /// Returns false when ScreenCaptureKit refused for lack of permission
+    /// (macOS shows its Screen Recording alert on every such call).
     func capture(_ ids: [CGWindowID], maxPixelWidth: Int,
-                 deliver: @MainActor @Sendable (CGWindowID, CGImage?) -> Void) async {
-        await refreshShareableContentIfStale()
+                 deliver: @MainActor @Sendable (CGWindowID, CGImage?) -> Void) async -> Bool {
+        guard await refreshShareableContentIfStale() else { return false }
         for id in ids {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return true }
             guard let window = shareable[id] else { continue }
             let image = await Self.screenshot(of: window, maxPixelWidth: maxPixelWidth)
             if let image, !Self.isBlank(image) {
@@ -36,6 +38,7 @@ actor ThumbnailCapturer {
                 await deliver(id, nil)
             }
         }
+        return true
     }
 
     /// Drops images for windows that no longer exist.
@@ -43,13 +46,20 @@ actor ThumbnailCapturer {
         images = images.filter { live.contains($0.key) }
     }
 
-    private func refreshShareableContentIfStale() async {
-        guard Date.now.timeIntervalSince(shareableFetchedAt) > 2 else { return }
-        guard let content = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false) else {
-            return
+    /// Returns false only when access was declined; other failures keep
+    /// the previous list.
+    private func refreshShareableContentIfStale() async -> Bool {
+        guard Date.now.timeIntervalSince(shareableFetchedAt) > 2 else { return true }
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
+            shareable = Dictionary(content.windows.map { ($0.windowID, $0) }, uniquingKeysWith: { a, _ in a })
+            shareableFetchedAt = .now
+            return true
+        } catch let error as SCStreamError where error.code == .userDeclined {
+            return false
+        } catch {
+            return true
         }
-        shareable = Dictionary(content.windows.map { ($0.windowID, $0) }, uniquingKeysWith: { a, _ in a })
-        shareableFetchedAt = .now
     }
 
     private static func screenshot(of window: SCWindow, maxPixelWidth: Int) async -> CGImage? {
