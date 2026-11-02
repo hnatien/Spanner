@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.png" alt="Spanner logo" width="168" height="168">
+<img src="assets/logo.png" alt="Spanner logo" width="168" height="168">
 
 # Spanner
 
@@ -43,7 +43,7 @@
 </details>
 
 > [!NOTE]
-> The switcher relies on private SkyLight/CGS APIs, so Spanner is **direct distribution only**, with no Mac App Store edition. Charge limiting is out of scope for now: firmware shipped with macOS 27 locks the charge-control SMC keys even for root. See the [feasibility report](docs/macOS%20utilities%20app%20feasibility.md).
+> The switcher relies on private SkyLight/CGS APIs, so Spanner is **direct distribution only**, with no Mac App Store edition. Charge limiting is out of scope for now: firmware shipped with macOS 27 locks the charge-control SMC keys even for root.
 
 ## Install
 
@@ -109,7 +109,7 @@ Spanner/
 │   └── DesignSystem/        tokens and shared components
 ├── Packages/SpannerKit/     testable core logic + CSMC, a tiny AppleSMC shim
 ├── prototypes/              Phase 0 spikes: hotkey, event tap, capture, SMC
-├── docs/                    feasibility research, Phase 0 and 2 results, logo
+├── assets/                  logo
 ├── scripts/                 signing setup, icon and logo generator
 └── project.yml              XcodeGen spec (Spanner.xcodeproj is generated)
 ```
@@ -117,7 +117,7 @@ Spanner/
 <br>
 
 <div align="center">
-<img src="docs/assets/logo.png" alt="" width="40" height="40">
+<img src="assets/logo.png" alt="" width="40" height="40">
 <br>
 <sub>Tighten what macOS left loose.</sub>
 </div>

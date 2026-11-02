@@ -4,7 +4,7 @@
 import AppKit
 
 let iconDir = URL(fileURLWithPath: "Spanner/Resources/Assets.xcassets/AppIcon.appiconset")
-let logo = URL(fileURLWithPath: "docs/assets/logo.png")
+let logo = URL(fileURLWithPath: "assets/logo.png")
 let size = 1024
 let canvas = CGRect(x: 0, y: 0, width: size, height: size)
 let space = CGColorSpace(name: CGColorSpace.sRGB)!

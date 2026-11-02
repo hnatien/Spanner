@@ -12,5 +12,4 @@ xcuserdata/
 # Phase 0 captures are real screenshots of the desktop; keep them local.
 prototypes/results/thumbs/
 prototypes/results/*.png
-docs/reports/
-docs/research_notes/macOS utility gaps for Spanner/
+/docs/
