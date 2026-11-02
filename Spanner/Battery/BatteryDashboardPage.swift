@@ -24,7 +24,6 @@ struct BatteryDashboardPage: View {
                 DetailsCard(snapshot: snapshot)
                 BatteryHistoryCard(history: battery.history)
                 EnergyCard()
-                HeadphonesCard()
                 if !battery.accessories.isEmpty {
                     AccessoriesCard(accessories: battery.accessories)
                 }
@@ -35,7 +34,6 @@ struct BatteryDashboardPage: View {
                                    message: "This Mac runs on mains power only, so there's no battery to show.")
                 }
                 EnergyCard()
-                HeadphonesCard()
                 if !battery.accessories.isEmpty {
                     AccessoriesCard(accessories: battery.accessories)
                 }
@@ -304,65 +302,6 @@ private struct DetailsCard: View {
         case .full: return "Full"
         case .pluggedNotCharging: return "Paused"
         default: return "Calculating…"
-        }
-    }
-}
-
-// MARK: - Headphones
-
-private struct HeadphonesCard: View {
-    @Environment(HeadphoneMonitor.self) private var monitor
-    @Environment(PermissionsManager.self) private var permissions
-
-    var body: some View {
-        @Bindable var monitor = monitor
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            if monitor.isEnabled {
-                MissingPermissionsGroup(needed: [.bluetooth],
-                                        footer: "Spanner reads battery levels from your paired headphones. Nothing leaves your Mac.")
-            }
-            Card {
-                VStack(alignment: .leading, spacing: Spacing.m) {
-                    HStack {
-                        CardTitle(title: "Headphones", symbol: "airpods.pro")
-                        Spacer(minLength: Spacing.l)
-                        Toggle("Show battery when you put them on", isOn: $monitor.isEnabled)
-                            .toggleStyle(.switch)
-                            .controlSize(.small)
-                    }
-                    if !monitor.isEnabled {
-                        Text("Shows your AirPods' battery on screen when you put them in, or when other headphones connect.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    } else if permissions.isGranted(.bluetooth) && monitor.headphones.isEmpty {
-                        Text("No headphones connected.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(monitor.headphones) { headphone in
-                        HStack(spacing: Spacing.m) {
-                            SymbolTile(symbol: headphone.symbol, tint: .gray, size: 28)
-                            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                                Text(headphone.name)
-                                Text(headphone.summary)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                            }
-                            Spacer(minLength: Spacing.l)
-                            if let lowest = headphone.lowest, let level = headphone.level {
-                                MeterBar(fraction: Double(lowest) / 100, tint: BatteryStyle.tint(for: level))
-                                    .frame(width: 120)
-                                Text("\(lowest)%")
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 44, alignment: .trailing)
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-            }
         }
     }
 }

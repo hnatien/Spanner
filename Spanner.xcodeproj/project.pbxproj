@@ -36,6 +36,7 @@
 		6B88F07E2E392CCE767796AA /* GeneralPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D772E77AB4FB3BF5D4DAE459 /* GeneralPage.swift */; };
 		70B9807A4C0F077659E852E6 /* SwitcherViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABDF4B337C6EF97C587896D /* SwitcherViews.swift */; };
 		727F67DCD618E9CAC964FA95 /* BatteryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2849D065229453B5C580028A /* BatteryReader.swift */; };
+		72A2E49DD3B13E875F0DD27E /* HeadphonesMenuTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD004C8DE920C60DC68E22B1 /* HeadphonesMenuTile.swift */; };
 		7D7169A7270E80B97AAA3131 /* HUDPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4D9A10F204258F23B66517 /* HUDPanel.swift */; };
 		7FF184049EA9E539938293E2 /* SoundController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B16231414B9ACF3E7E4AC97 /* SoundController.swift */; };
 		80BB88B7E4A448F3B9172516 /* BatteryDashboardPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 393E2D647978DF7DA30E309B /* BatteryDashboardPage.swift */; };
@@ -136,6 +137,7 @@
 		E94A45C85843AD30A1B32841 /* MenuBarPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarPanel.swift; sourceTree = "<group>"; };
 		EDDBDAC9E4C0577908B84316 /* EventTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTap.swift; sourceTree = "<group>"; };
 		EFF526997ADFECF4318C10E1 /* UpdatesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesController.swift; sourceTree = "<group>"; };
+		FD004C8DE920C60DC68E22B1 /* HeadphonesMenuTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphonesMenuTile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -369,6 +371,7 @@
 				750845BD8B0D4AEBBD5FAE15 /* EnergyMonitor.swift */,
 				E003EF2023BCE3F38A41313F /* HeadphoneMonitor.swift */,
 				31BB2DB8EFAFF332B1D50CBE /* HeadphoneReader.swift */,
+				FD004C8DE920C60DC68E22B1 /* HeadphonesMenuTile.swift */,
 			);
 			path = Battery;
 			sourceTree = "<group>";
@@ -482,6 +485,7 @@
 				7D7169A7270E80B97AAA3131 /* HUDPanel.swift in Sources */,
 				2F16490A7BB12CC4D2889FC6 /* HeadphoneMonitor.swift in Sources */,
 				B94B10DEA19D5EB8DE72514C /* HeadphoneReader.swift in Sources */,
+				72A2E49DD3B13E875F0DD27E /* HeadphonesMenuTile.swift in Sources */,
 				43D6B962074B408DFB265766 /* HotkeyCenter.swift in Sources */,
 				E6BA7D0F4BB3092ACBFC0150 /* KeepAwakeController.swift in Sources */,
 				A4F434FA4E59379BB1000CF7 /* KeepAwakeViews.swift in Sources */,

@@ -3,9 +3,10 @@ import IOBluetooth
 import Observation
 import SpannerCore
 
-/// Tracks connected headphones' battery and shows it on screen when the
-/// person starts using them (puts AirPods in, or connects headphones without
-/// ear detection). Off by default because it needs the Bluetooth permission.
+/// Tracks connected headphones' battery for the menu bar panel and can show
+/// it on screen when the person starts using them (puts AirPods in, or
+/// connects headphones without ear detection). Reads nothing until the
+/// Bluetooth permission is granted; the on-screen HUD is off by default.
 ///
 /// IOBluetooth has no notification for battery or ear changes, so they're
 /// polled: often while headphones are connected, rarely otherwise. A connect
@@ -14,11 +15,9 @@ import SpannerCore
 final class HeadphoneMonitor {
     private(set) var headphones: [HeadphoneBattery] = []
 
-    var isEnabled: Bool {
-        didSet {
-            defaults.set(isEnabled, forKey: Self.enabledKey)
-            if isEnabled { start() } else { stop() }
-        }
+    /// Whether putting headphones on shows their battery on screen.
+    var showsHUD: Bool {
+        didSet { defaults.set(showsHUD, forKey: Self.showsHUDKey) }
     }
 
     @ObservationIgnored private let permissions: PermissionsManager
@@ -30,7 +29,7 @@ final class HeadphoneMonitor {
     /// Polls fast until then after a connection, while battery reports come in.
     @ObservationIgnored private var connectedRecently = Date.distantPast
 
-    private static let enabledKey = "battery.headphonesEnabled"
+    private static let showsHUDKey = "battery.headphonesEnabled"
     private static let connectedInterval: Duration = .seconds(3)
     private static let idleInterval: Duration = .seconds(20)
     private static let connectGrace: TimeInterval = 30
@@ -38,11 +37,11 @@ final class HeadphoneMonitor {
     init(permissions: PermissionsManager, defaults: UserDefaults = .standard) {
         self.permissions = permissions
         self.defaults = defaults
-        isEnabled = defaults.bool(forKey: Self.enabledKey)
+        showsHUD = defaults.bool(forKey: Self.showsHUDKey)
     }
 
     func start() {
-        guard isEnabled, pollTask == nil else { return }
+        guard pollTask == nil else { return }
         schedulePolling()
     }
 
@@ -57,7 +56,7 @@ final class HeadphoneMonitor {
 
     private func refresh() {
         // IOBluetooth calls before the grant would make macOS prompt from a
-        // background poll; the battery page asks instead.
+        // background poll; Settings asks instead.
         guard permissions.isGranted(.bluetooth) else { return }
         if connectObserver == nil {
             connectObserver = ConnectObserver { [weak self] in
@@ -68,7 +67,9 @@ final class HeadphoneMonitor {
         }
         let current = HeadphoneReader.connected()
         if current != headphones { headphones = current }
-        if let started = detector.update(current, now: .now).first {
+        // The detector is fed even with the HUD off, so turning it on later
+        // doesn't treat headphones already in use as just put on.
+        if let started = detector.update(current, now: .now).first, showsHUD {
             showHUD(for: started)
         }
     }
@@ -104,6 +105,14 @@ extension HeadphoneBattery {
         case .airPodsMax: "airpods.max"
         case .other: "headphones"
         }
+    }
+
+    var leftSymbol: String { kind == .airPodsPro ? "airpodpro.left" : "airpod.left" }
+
+    var rightSymbol: String { kind == .airPodsPro ? "airpodpro.right" : "airpod.right" }
+
+    var caseSymbol: String {
+        kind == .airPodsPro ? "airpodspro.chargingcase.wireless.fill" : "airpods.chargingcase.fill"
     }
 }
 
