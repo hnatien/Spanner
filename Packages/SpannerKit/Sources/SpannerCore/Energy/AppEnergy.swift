@@ -15,6 +15,14 @@ public enum AppBundlePath {
         }
         return nil
     }
+
+    /// The app a process's energy counts toward: the bundle it lives in, or
+    /// failing that the bundle of the process macOS holds responsible for it,
+    /// so shared XPC services (WebKit's GPU and web content processes) count
+    /// toward the app they serve. Nil when neither is inside an app.
+    public static func owningApp(executable: String, responsible: String?) -> String? {
+        outermostApp(in: executable) ?? responsible.flatMap(outermostApp(in:))
+    }
 }
 
 /// One process's cumulative energy counter (`ri_energy_nj`) at a moment.
@@ -48,6 +56,27 @@ public struct AppPower: Identifiable, Equatable, Sendable {
         self.name = name
         self.watts = watts
         self.joules = joules
+    }
+
+    /// False for processes outside any app bundle, grouped by their own path.
+    public var isApp: Bool { groupKey.hasSuffix(".app") }
+}
+
+/// Processes no app accounts for (background agents and daemons, tools
+/// started outside an app), summed into one row.
+public struct BackgroundPower: Equatable, Sendable {
+    public let watts: Double
+    public let joules: Double
+    /// Process names, busiest first.
+    public let names: [String]
+
+    /// Sums the non-app entries of `ranked`; nil when there are none.
+    public init?(_ ranked: [AppPower]) {
+        let processes = ranked.filter { !$0.isApp }
+        guard !processes.isEmpty else { return nil }
+        watts = processes.reduce(0) { $0 + $1.watts }
+        joules = processes.reduce(0) { $0 + $1.joules }
+        names = processes.map(\.name)
     }
 }
 

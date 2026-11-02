@@ -10,6 +10,32 @@ struct AppEnergyTests {
         #expect(AppBundlePath.outermostApp(in: "/Applications/Notes.app") == "/Applications/Notes.app")
     }
 
+    @Test func servicesOutsideAnAppCountTowardTheAppResponsibleForThem() {
+        let webContent = "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent"
+        #expect(AppBundlePath.owningApp(executable: webContent, responsible: "/Applications/Safari.app/Contents/MacOS/Safari")
+            == "/Applications/Safari.app")
+        // A process's own bundle wins over whoever launched it.
+        #expect(AppBundlePath.owningApp(executable: "/Applications/Notes.app/Contents/MacOS/Notes",
+                                        responsible: "/Applications/Terminal.app/Contents/MacOS/Terminal")
+            == "/Applications/Notes.app")
+        #expect(AppBundlePath.owningApp(executable: "/usr/libexec/corespeechd", responsible: "/usr/libexec/avconferenced") == nil)
+        #expect(AppBundlePath.owningApp(executable: "/usr/sbin/cfprefsd", responsible: nil) == nil)
+    }
+
+    @Test func backgroundSumsProcessesOutsideAppsBusiestFirst() {
+        let ranked = [
+            AppPower(groupKey: "/Applications/Xcode.app", name: "Xcode", watts: 3, joules: 30),
+            AppPower(groupKey: "/usr/libexec/corespeechd", name: "corespeechd", watts: 2, joules: 5),
+            AppPower(groupKey: "pid:42", name: "PID 42", watts: 0.5, joules: 1),
+        ]
+        let background = BackgroundPower(ranked)
+        #expect(background?.watts == 2.5)
+        #expect(background?.joules == 6)
+        #expect(background?.names == ["corespeechd", "PID 42"])
+        #expect(ranked.filter(\.isApp).map(\.name) == ["Xcode"])
+        #expect(BackgroundPower(Array(ranked.prefix(1))) == nil)
+    }
+
     func sample(_ pid: Int32, _ nj: UInt64, _ key: String = "A") -> ProcessEnergySample {
         ProcessEnergySample(pid: pid, energyNanojoules: nj, groupKey: key, name: key)
     }

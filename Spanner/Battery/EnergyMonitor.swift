@@ -3,8 +3,15 @@ import Darwin
 import Observation
 import SpannerCore
 
+/// The process macOS holds responsible for `pid` (the app an XPC service or
+/// child process works for), or `pid` itself; -1 when unknown. Private
+/// libsystem call, the one Activity Monitor attributes energy with.
+@_silgen_name("responsibility_get_pid_responsible_for_pid")
+nonisolated func responsibility_get_pid_responsible_for_pid(_ pid: pid_t) -> pid_t
+
 /// Power drawn by each app, from the kernel's per-process energy counter
-/// (`proc_pid_rusage` → `ri_energy_nj`), grouped by app bundle.
+/// (`proc_pid_rusage` → `ri_energy_nj`), grouped by the app each process
+/// belongs to or works for.
 ///
 /// Phase 2 measured that this works without root for every process the
 /// person owns; root-owned daemons (WindowServer, kernel_task) return EPERM
@@ -12,6 +19,8 @@ import SpannerCore
 @Observable
 final class EnergyMonitor {
     private(set) var apps: [AppPower] = []
+    /// Everything no app accounts for, as one row.
+    private(set) var background: BackgroundPower?
     private(set) var lastSample: Date?
 
     /// Set by the dashboard while it is on screen.
@@ -51,7 +60,8 @@ final class EnergyMonitor {
                 // them would animate the energy list behind other windows;
                 // becoming visible reschedules and publishes at once.
                 if self.isVisible, !result.isEmpty {
-                    self.apps = result
+                    self.apps = result.filter(\.isApp)
+                    self.background = BackgroundPower(result)
                     self.lastSample = .now
                 }
                 try? await Task.sleep(for: self.isVisible ? Self.visibleInterval : Self.backgroundInterval)
@@ -95,7 +105,9 @@ private nonisolated final class EnergySampler: @unchecked Sendable {
 
     private nonisolated func identify(_ pid: pid_t) -> (key: String, name: String) {
         guard let path = ProcessPath.executable(of: pid) else { return ("pid:\(pid)", "PID \(pid)") }
-        if let app = AppBundlePath.outermostApp(in: path) {
+        let responsible = responsibility_get_pid_responsible_for_pid(pid)
+        let responsiblePath = responsible > 0 && responsible != pid ? ProcessPath.executable(of: responsible) : nil
+        if let app = AppBundlePath.owningApp(executable: path, responsible: responsiblePath) {
             let name = ((app as NSString).lastPathComponent as NSString).deletingPathExtension
             return (app, name)
         }
