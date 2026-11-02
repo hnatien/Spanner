@@ -29,8 +29,14 @@ struct ShortcutRecorder: View {
             }
             .font(.callout)
             .frame(minWidth: 120, minHeight: 22)
+            .padding(.horizontal, Spacing.s)
+            .padding(.vertical, Spacing.xs)
+            .background(.quaternary.opacity(isRecording ? 1 : 0.6), in: .rect(cornerRadius: CornerRadius.s, style: .continuous))
+            .contentShape(.rect(cornerRadius: CornerRadius.s, style: .continuous))
         }
-        .buttonStyle(.bordered)
+        // Drawn in SwiftUI rather than .bordered, which hosts an AppKit button
+        // per recorder and makes long lists of shortcuts scroll poorly.
+        .buttonStyle(.plain)
         .help(isRecording ? "Press a key combination. Escape cancels\(allowsClearing ? ", Delete clears" : "")." : "Click to change")
         .onDisappear(perform: stop)
     }

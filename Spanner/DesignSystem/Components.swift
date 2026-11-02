@@ -265,7 +265,13 @@ struct Keycaps: View {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .strokeBorder(.separator, lineWidth: 0.5)
                     }
-                    .shadow(color: .black.opacity(0.12), radius: 0, y: 1)
+                    // A drawn bottom edge instead of .shadow: pages show dozens
+                    // of keycaps, and a shadow each makes scrolling stutter.
+                    .background {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(.black.opacity(0.12))
+                            .offset(y: 1)
+                    }
             }
         }
         .accessibilityElement(children: .ignore)
