@@ -19,9 +19,24 @@ public enum AppBundlePath {
     /// The app a process's energy counts toward: the bundle it lives in, or
     /// failing that the bundle of the process macOS holds responsible for it,
     /// so shared XPC services (WebKit's GPU and web content processes) count
-    /// toward the app they serve. Nil when neither is inside an app.
-    public static func owningApp(executable: String, responsible: String?) -> String? {
-        outermostApp(in: executable) ?? responsible.flatMap(outermostApp(in:))
+    /// toward the app they serve. Bundles `isApp` rejects are skipped, so a
+    /// tool packaged as an `.app` falls through to whoever launched it. Nil
+    /// when neither is inside an app.
+    public static func owningApp(executable: String, responsible: String?,
+                                 isApp: (String) -> Bool) -> String? {
+        [outermostApp(in: executable), responsible.flatMap(outermostApp(in:))]
+            .compactMap { $0 }
+            .first(where: isApp)
+    }
+
+    /// Whether the bundle at `path` is an app people use, from its
+    /// Info.plist: false for background-only bundles (command-line tools
+    /// packaged as apps) and for macOS's own agents that hide from the Dock
+    /// (WindowManager, Control Center). Third-party menu bar apps stay apps.
+    public static func isApp(at path: String, info: [String: Any]) -> Bool {
+        if info["LSBackgroundOnly"] as? Bool == true { return false }
+        if info["LSUIElement"] as? Bool == true, path.hasPrefix("/System/") { return false }
+        return true
     }
 }
 

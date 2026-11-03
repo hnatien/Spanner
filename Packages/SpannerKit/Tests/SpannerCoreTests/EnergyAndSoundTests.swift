@@ -12,14 +12,32 @@ struct AppEnergyTests {
 
     @Test func servicesOutsideAnAppCountTowardTheAppResponsibleForThem() {
         let webContent = "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent"
-        #expect(AppBundlePath.owningApp(executable: webContent, responsible: "/Applications/Safari.app/Contents/MacOS/Safari")
+        #expect(AppBundlePath.owningApp(executable: webContent, responsible: "/Applications/Safari.app/Contents/MacOS/Safari", isApp: { _ in true })
             == "/Applications/Safari.app")
         // A process's own bundle wins over whoever launched it.
         #expect(AppBundlePath.owningApp(executable: "/Applications/Notes.app/Contents/MacOS/Notes",
-                                        responsible: "/Applications/Terminal.app/Contents/MacOS/Terminal")
+                                        responsible: "/Applications/Terminal.app/Contents/MacOS/Terminal", isApp: { _ in true })
             == "/Applications/Notes.app")
-        #expect(AppBundlePath.owningApp(executable: "/usr/libexec/corespeechd", responsible: "/usr/libexec/avconferenced") == nil)
-        #expect(AppBundlePath.owningApp(executable: "/usr/sbin/cfprefsd", responsible: nil) == nil)
+        #expect(AppBundlePath.owningApp(executable: "/usr/libexec/corespeechd", responsible: "/usr/libexec/avconferenced", isApp: { _ in true }) == nil)
+        #expect(AppBundlePath.owningApp(executable: "/usr/sbin/cfprefsd", responsible: nil, isApp: { _ in true }) == nil)
+    }
+
+    @Test func bundlesThatAreNotAppsFallThroughToTheResponsibleApp() {
+        let cli = "/Users/me/Library/Application Support/Claude/claude-code/2.1/claude.app/Contents/MacOS/claude"
+        let notApps: Set = ["/Users/me/Library/Application Support/Claude/claude-code/2.1/claude.app"]
+        let isApp = { !notApps.contains($0) }
+        #expect(AppBundlePath.owningApp(executable: cli, responsible: cli, isApp: isApp) == nil)
+        #expect(AppBundlePath.owningApp(executable: cli, responsible: "/Applications/Terminal.app/Contents/MacOS/Terminal",
+                                        isApp: isApp) == "/Applications/Terminal.app")
+    }
+
+    @Test func backgroundOnlyBundlesAndSystemAgentsAreNotApps() {
+        #expect(!AppBundlePath.isApp(at: "/Users/me/Library/claude.app", info: ["LSBackgroundOnly": true]))
+        #expect(!AppBundlePath.isApp(at: "/System/Library/CoreServices/WindowManager.app", info: ["LSUIElement": true]))
+        // Menu bar apps people installed are still apps.
+        #expect(AppBundlePath.isApp(at: "/Applications/Spanner.app", info: ["LSUIElement": true]))
+        #expect(AppBundlePath.isApp(at: "/System/Library/CoreServices/Finder.app", info: [:]))
+        #expect(AppBundlePath.isApp(at: "/Applications/Xcode.app", info: ["LSBackgroundOnly": false]))
     }
 
     @Test func backgroundSumsProcessesOutsideAppsBusiestFirst() {
