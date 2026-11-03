@@ -254,55 +254,248 @@ private struct ProfileRow: View {
 
 // MARK: - Details
 
+/// Groups the raw readings by what they mean: how much power the battery
+/// moves (and the volts × amps behind it), how much charge is stored, and
+/// whether the temperature is in a healthy range.
 private struct DetailsCard: View {
     let snapshot: BatterySnapshot
 
     var body: some View {
         Card {
-            VStack(alignment: .leading, spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.l) {
                 CardTitle(title: "Details", symbol: "list.bullet.rectangle")
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: Spacing.l, alignment: .topLeading)],
-                          alignment: .leading, spacing: Spacing.l) {
-                    if let voltage = snapshot.voltage {
-                        StatTile(title: "Voltage", value: BatteryFormat.volts(voltage),
-                                 symbol: "bolt", tint: .yellow)
-                    }
-                    if let amperage = snapshot.amperage {
-                        StatTile(title: "Current", value: BatteryFormat.amps(amperage, signed: true),
-                                 detail: amperage >= 0 ? "Into battery" : "Out of battery",
-                                 symbol: "arrow.left.arrow.right", tint: .blue)
-                    }
-                    if let watts = snapshot.batteryWatts {
-                        StatTile(title: "Battery power", value: BatteryFormat.watts(abs(watts)),
-                                 symbol: "bolt.batteryblock", tint: .green)
-                    }
+                if snapshot.voltage != nil || snapshot.amperage != nil {
+                    ElectricalSection(snapshot: snapshot)
+                }
+                HStack(alignment: .top, spacing: Spacing.xl) {
+                    ChargeSection(snapshot: snapshot)
                     if let temperature = snapshot.temperature {
-                        StatTile(title: "Temperature", value: BatteryFormat.celsius(temperature),
-                                 detail: temperature >= 40 ? "Warm" : nil,
-                                 symbol: "thermometer.medium", tint: temperature >= 40 ? .orange : .red)
-                    }
-                    StatTile(title: timeTitle, value: timeValue, symbol: "clock", tint: .purple)
-                    if let current = snapshot.currentCapacity {
-                        StatTile(title: "Charge", value: BatteryFormat.milliampHours(current),
-                                 symbol: "battery.75percent", tint: .green)
+                        TemperatureSection(celsius: temperature)
                     }
                 }
             }
         }
     }
+}
 
-    private var timeTitle: String {
-        snapshot.isPluggedIn ? "Time to full" : "Time remaining"
+private struct DetailSectionTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+}
+
+private struct DetailValue: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.title3.weight(.semibold))
+            .monospacedDigit()
+            .contentTransition(.numericText())
+            .lineLimit(1)
+    }
+}
+
+/// "↑ 39.3 W drawn from the battery", with the volts × amps it comes from
+/// underneath for anyone who wants the raw readings.
+private struct ElectricalSection: View {
+    let snapshot: BatterySnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                if let watts {
+                    Label(BatteryFormat.watts(watts), systemImage: direction.symbol)
+                        .font(.title2.weight(.semibold))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: watts))
+                        .foregroundStyle(direction.tint)
+                        .lineLimit(1)
+                    Text(direction.text)
+                        .foregroundStyle(.secondary)
+                } else {
+                    // Only one of volts or amps was reported, so there's no power to lead with.
+                    DetailValue(text: readings)
+                }
+            }
+            if watts != nil {
+                Text(readings)
+                    .font(.callout)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
-    private var timeValue: String {
-        let minutes = snapshot.isPluggedIn ? snapshot.minutesToFull : snapshot.minutesToEmpty
-        if let minutes { return SpannerFormat.duration(Double(minutes) * 60) }
-        switch snapshot.state {
-        case .full: return "Full"
-        case .pluggedNotCharging: return "Paused"
-        default: return "Calculating…"
+    /// Watts from the volts and amps shown, so the two lines add up.
+    private var watts: Double? {
+        guard let voltage = snapshot.voltage, let amperage = snapshot.amperage else { return nil }
+        return Double(voltage) * Double(abs(amperage)) / 1_000_000
+    }
+
+    /// "12.64 V × 3.11 A", or whichever of the two is known.
+    private var readings: String {
+        [snapshot.voltage.map { BatteryFormat.volts($0) },
+         snapshot.amperage.map { BatteryFormat.amps(abs($0)) }]
+            .compactMap(\.self)
+            .joined(separator: " × ")
+    }
+
+    private var direction: (text: String, symbol: String, tint: Color) {
+        let amperage = snapshot.amperage ?? 0
+        if amperage > 0 { return ("flowing into the battery", "arrow.down", .green) }
+        if amperage < 0 { return ("drawn from the battery", "arrow.up", .orange) }
+        return ("battery idle", "pause", .secondary)
+    }
+}
+
+/// Stored mAh against the full-charge capacity, plus when it fills or runs out.
+private struct ChargeSection: View {
+    let snapshot: BatterySnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            DetailSectionTitle(title: "Stored charge")
+            if let current = snapshot.currentCapacity {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                    DetailValue(text: BatteryFormat.milliampHours(current))
+                    if let max = snapshot.maxCapacity {
+                        Text("of \(BatteryFormat.milliampHours(max))")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+            } else {
+                DetailValue(text: "\(snapshot.percent)%")
+            }
+            MeterBar(fraction: snapshot.chargeFraction ?? Double(snapshot.percent) / 100,
+                     tint: BatteryStyle.tint(for: snapshot))
+                .padding(.vertical, Spacing.xxs)
+            timeText
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var timeText: Text {
+        // The hero already shows the exact estimate; here it's rounded, since
+        // it swings by minutes with every change in load.
+        let minutes = snapshot.isPluggedIn ? snapshot.minutesToFull : snapshot.minutesToEmpty
+        if let minutes {
+            let duration = BatteryFormat.roughDuration(minutes: minutes)
+            return snapshot.isPluggedIn
+                ? Text("Full in about \(duration)")
+                : Text("About \(duration) left at this rate")
+        }
+        switch snapshot.state {
+        case .full: return Text("Fully charged")
+        case .pluggedNotCharging: return Text("Charging paused")
+        default: return Text("Estimating time…")
+        }
+    }
+}
+
+/// Temperature with a cool / normal / warm scale and a marker for the reading.
+private struct TemperatureSection: View {
+    let celsius: Double
+
+    var body: some View {
+        let band = TemperatureBand(celsius: celsius)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            DetailSectionTitle(title: "Temperature")
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                DetailValue(text: BatteryFormat.celsius(celsius))
+                Text(Self.label(band))
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Self.tint(band))
+            }
+            TemperatureScale(celsius: celsius)
+                .padding(.vertical, Spacing.xxs)
+            TemperatureTicks()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Temperature")
+        .accessibilityValue("\(BatteryFormat.celsius(celsius)), \(Self.label(band))")
+    }
+
+    static func label(_ band: TemperatureBand) -> String {
+        switch band {
+        case .cool: "Cool"
+        case .normal: "Normal"
+        case .warm: "Warm"
+        case .hot: "Hot"
+        }
+    }
+
+    static func tint(_ band: TemperatureBand) -> Color {
+        switch band {
+        case .cool: .blue
+        case .normal: .green
+        case .warm: .orange
+        case .hot: .red
+        }
+    }
+}
+
+private struct TemperatureScale: View {
+    let celsius: Double
+    private let height: CGFloat = 6
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            ZStack(alignment: .leading) {
+                HStack(spacing: 2) {
+                    segment(.cool, from: TemperatureBand.scale.lowerBound, to: TemperatureBand.normalFrom, width: width)
+                    segment(.normal, from: TemperatureBand.normalFrom, to: TemperatureBand.warmFrom, width: width)
+                    segment(.warm, from: TemperatureBand.warmFrom, to: TemperatureBand.hotFrom, width: width)
+                    segment(.hot, from: TemperatureBand.hotFrom, to: TemperatureBand.scale.upperBound, width: width)
+                }
+                Capsule()
+                    .fill(.primary)
+                    .frame(width: 3, height: height + 6)
+                    .offset(x: width * TemperatureBand.scaleFraction(celsius) - 1.5)
+            }
+            .frame(height: height + 6)
+        }
+        .frame(height: height + 6)
+        .animation(.spanner, value: celsius)
+    }
+
+    private func segment(_ band: TemperatureBand, from: Double, to: Double, width: CGFloat) -> some View {
+        Capsule()
+            .fill(TemperatureSection.tint(band).opacity(0.45))
+            .frame(width: max(0, width * (TemperatureBand.scaleFraction(to) - TemperatureBand.scaleFraction(from)) - 2),
+                   height: height)
+    }
+}
+
+/// Degree labels under `TemperatureScale`, each centred on the band edge it marks.
+private struct TemperatureTicks: View {
+    var body: some View {
+        GeometryReader { proxy in
+            ForEach([TemperatureBand.normalFrom, TemperatureBand.warmFrom, TemperatureBand.hotFrom], id: \.self) { celsius in
+                Text("\(Int(celsius))°")
+                    .fixedSize()
+                    .position(x: proxy.size.width * TemperatureBand.scaleFraction(celsius),
+                              y: proxy.size.height / 2)
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+        .frame(height: 16)
     }
 }
 

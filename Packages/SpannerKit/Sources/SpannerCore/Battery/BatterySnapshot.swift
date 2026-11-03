@@ -19,6 +19,32 @@ public enum ChargeLevel: Equatable, Sendable {
     }
 }
 
+/// Battery temperature band. Cells sit around 25–35 °C in normal use;
+/// above 40 °C macOS starts slowing charging to protect them.
+public enum TemperatureBand: Equatable, Sendable {
+    case cool    // below 20 °C
+    case normal
+    case warm    // 40 °C and up
+    case hot     // 45 °C and up
+
+    /// Range shown on the temperature scale, in °C.
+    public static let scale: ClosedRange<Double> = 10...50
+    /// Where the bands start on the scale, in °C.
+    public static let normalFrom = 20.0, warmFrom = 40.0, hotFrom = 45.0
+
+    public init(celsius: Double) {
+        self = celsius >= Self.hotFrom ? .hot
+            : celsius >= Self.warmFrom ? .warm
+            : celsius >= Self.normalFrom ? .normal
+            : .cool
+    }
+
+    /// Position of a temperature on `scale`, clamped to 0...1.
+    public static func scaleFraction(_ celsius: Double) -> Double {
+        min(1, max(0, (celsius - scale.lowerBound) / (scale.upperBound - scale.lowerBound)))
+    }
+}
+
 /// One reading of the internal battery, parsed from the `AppleSmartBattery`
 /// IORegistry entry plus the IOPowerSources description.
 ///
@@ -125,6 +151,15 @@ public struct BatterySnapshot: Equatable, Sendable {
         guard let maxCapacity, let designCapacity, designCapacity > 0 else { return nil }
         return Double(maxCapacity) / Double(designCapacity)
     }
+
+    /// Stored charge as a fraction of the raw full-charge capacity, matching
+    /// the mAh figures shown beside it.
+    public var chargeFraction: Double? {
+        guard let currentCapacity, let maxCapacity, maxCapacity > 0 else { return nil }
+        return min(1, Double(currentCapacity) / Double(maxCapacity))
+    }
+
+    public var temperatureBand: TemperatureBand? { temperature.map(TemperatureBand.init(celsius:)) }
 
     /// Cycles used as a fraction of the rated cycle count.
     public var cycleFraction: Double? {

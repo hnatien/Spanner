@@ -157,6 +157,43 @@ struct BatterySnapshotTests {
         #expect(snapshot.health == nil)
     }
 
+    @Test func chargeFractionIsRawCurrentOverRawMax() throws {
+        let snapshot = try #require(BatterySnapshot(registry: PropertyBag(BatteryFixtures.charging)))
+        let fraction = try #require(snapshot.chargeFraction)
+        #expect(abs(fraction - 3544.0 / 4375.0) < 0.0001)
+    }
+
+    @Test func chargeFractionNeedsCapacitiesAndIsClamped() throws {
+        var snapshot = try #require(BatterySnapshot(registry: PropertyBag(["CurrentCapacity": 50])))
+        #expect(snapshot.chargeFraction == nil)
+        snapshot.currentCapacity = 4100
+        snapshot.maxCapacity = 0
+        #expect(snapshot.chargeFraction == nil)
+        snapshot.maxCapacity = 4000
+        #expect(snapshot.chargeFraction == 1)
+    }
+
+    @Test func temperatureBands() {
+        #expect(TemperatureBand(celsius: 15) == .cool)
+        #expect(TemperatureBand(celsius: 20) == .normal)
+        #expect(TemperatureBand(celsius: 33) == .normal)
+        #expect(TemperatureBand(celsius: 39.9) == .normal)
+        #expect(TemperatureBand(celsius: 40) == .warm)
+        #expect(TemperatureBand(celsius: 45) == .hot)
+        var snapshot = BatterySnapshot(percent: 50, isCharging: false, isPluggedIn: false)
+        #expect(snapshot.temperatureBand == nil)
+        snapshot.temperature = 42
+        #expect(snapshot.temperatureBand == .warm)
+    }
+
+    @Test func temperatureScaleFractionIsClamped() {
+        #expect(TemperatureBand.scaleFraction(10) == 0)
+        #expect(TemperatureBand.scaleFraction(30) == 0.5)
+        #expect(TemperatureBand.scaleFraction(50) == 1)
+        #expect(TemperatureBand.scaleFraction(-5) == 0)
+        #expect(TemperatureBand.scaleFraction(80) == 1)
+    }
+
     @Test func levelBands() {
         #expect(ChargeLevel(percent: 5) == .critical)
         #expect(ChargeLevel(percent: 10) == .low)
@@ -313,6 +350,18 @@ struct BatteryFormatTests {
         #expect(BatteryFormat.amps(1175, signed: true) == "+1.18 A")
         #expect(BatteryFormat.amps(-1160, signed: true) == "−1.16 A")
         #expect(BatteryFormat.celsius(35.62) == "35.6 °C")
+        #expect(BatteryFormat.milliampHours(4375) == "4,375 mAh")
+        #expect(BatteryFormat.milliampHours(980) == "980 mAh")
+    }
+
+    @Test func roughDurationRoundsToAnHonestStep() {
+        #expect(BatteryFormat.roughDuration(minutes: 241) == "4 h")
+        #expect(BatteryFormat.roughDuration(minutes: 83) == "1 h 30 min")
+        #expect(BatteryFormat.roughDuration(minutes: 74) == "1 h 15 min")
+        #expect(BatteryFormat.roughDuration(minutes: 58) == "1 h")
+        #expect(BatteryFormat.roughDuration(minutes: 23) == "25 min")
+        #expect(BatteryFormat.roughDuration(minutes: 3) == "3 min")
+        #expect(BatteryFormat.roughDuration(minutes: 0) == "Less than a minute")
     }
 }
 
