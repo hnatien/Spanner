@@ -36,6 +36,7 @@ final class WindowInventory {
     private(set) var appRecency: [pid_t] = []
     private var observers: [NSObjectProtocol] = []
     private var refreshTask: Task<Void, Never>?
+    private var desktopMemory = DesktopMemory()
 
     /// Called on the main actor after a background Accessibility read lands.
     var onAccessibilityRefresh: (() -> Void)?
@@ -61,6 +62,11 @@ final class WindowInventory {
                 self?.appRecency.removeAll { $0 == pid }
             }
         })
+        observers.append(center.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil,
+                                            queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.desktopMemory.note(Self.displaySpaces()) }
+        })
+        desktopMemory.note(Self.displaySpaces())
         if let front = NSWorkspace.shared.frontmostApplication {
             noteActivated(front.processIdentifier)
         }
@@ -105,7 +111,10 @@ final class WindowInventory {
         let zOrder = Self.windowInfo([.optionOnScreenOnly, .excludeDesktopElements])
             .compactMap { $0[kCGWindowNumber as String] as? CGWindowID }
 
-        let visibleSpaces = Self.visibleSpaces()
+        let displays = Self.displaySpaces()
+        desktopMemory.note(displays)
+        let visibleSpaces = Set(displays.map(\.current))
+        let coveredDesktops = desktopMemory.coveredDesktops(displays)
         var sizes: [CGWindowID: CGSize] = [:]
         let candidates: [WindowCandidate] = all.compactMap { info in
             guard let id = info[kCGWindowNumber as String] as? CGWindowID,
@@ -117,6 +126,9 @@ final class WindowInventory {
             let ownWindow = pid == Self.ownPID ? NSApp.window(withWindowNumber: Int(id)) : nil
             let serverName = info[kCGWindowName as String] as? String ?? ""
             let isOnScreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
+            let placement = isOnScreen || app.isHidden ? (isOrderedOut: false, isBehindFullScreen: false)
+                : WindowPlacement.classify(isOrderedIn: Self.isOrderedIn(id), spaces: { Self.spaces(of: id) },
+                                           visibleSpaces: visibleSpaces, coveredDesktops: coveredDesktops)
             sizes[id] = bounds.size
             return WindowCandidate(id: id, pid: pid, appName: app.localizedName ?? "",
                                    title: ownWindow?.title
@@ -126,8 +138,8 @@ final class WindowInventory {
                                    isOnScreen: isOnScreen,
                                    hasAXElement: ax != nil || ownWindow != nil,
                                    isMinimized: ownWindow?.isMiniaturized ?? ax?.isMinimized ?? false,
-                                   isOrderedOut: !isOnScreen && !app.isHidden
-                                       && Self.isOrderedOut(id, visibleSpaces: visibleSpaces))
+                                   isOrderedOut: placement.isOrderedOut,
+                                   isBehindFullScreen: placement.isBehindFullScreen)
         }
 
         return WindowListBuilder.build(candidates, zOrder: zOrder, appRecency: appRecency, options: options).map {
@@ -216,18 +228,30 @@ final class WindowInventory {
         NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
     }
 
-    /// An off-screen window that is on no Space, or on one being shown,
-    /// has been ordered out rather than left on another Space.
-    private static func isOrderedOut(_ id: CGWindowID, visibleSpaces: Set<Int>) -> Bool {
-        guard let spaces = CGSCopySpacesForWindows(CGSMainConnectionID(), 7, [id] as CFArray)?
-            .takeRetainedValue() as? [Int] else { return false }
-        return spaces.isEmpty || !visibleSpaces.isDisjoint(with: spaces)
+    /// The window server's ordered-in flag, nil if the call fails.
+    private static func isOrderedIn(_ id: CGWindowID) -> Bool? {
+        var orderedIn = DarwinBoolean(false)
+        guard CGSWindowIsOrderedIn(CGSMainConnectionID(), id, &orderedIn) == .success else { return nil }
+        return orderedIn.boolValue
     }
 
-    /// The Space each display is showing.
-    private static func visibleSpaces() -> Set<Int> {
+    /// The window's Spaces, nil if the lookup fails.
+    private static func spaces(of id: CGWindowID) -> [Int]? {
+        CGSCopySpacesForWindows(CGSMainConnectionID(), 7, [id] as CFArray)?.takeRetainedValue() as? [Int]
+    }
+
+    /// Each display's current Space and desktops. Full-screen Spaces have
+    /// type 4; ordinary desktops type 0.
+    private static func displaySpaces() -> [DisplaySpaces] {
         let displays = CGSCopyManagedDisplaySpaces(CGSMainConnectionID())?.takeRetainedValue() as? [[String: Any]] ?? []
-        return Set(displays.compactMap { ($0["Current Space"] as? [String: Any])?["ManagedSpaceID"] as? Int })
+        return displays.compactMap { display in
+            guard let id = display["Display Identifier"] as? String,
+                  let current = (display["Current Space"] as? [String: Any])?["ManagedSpaceID"] as? Int else { return nil }
+            let desktops = (display["Spaces"] as? [[String: Any]] ?? [])
+                .filter { $0["type"] as? Int == 0 }
+                .compactMap { $0["ManagedSpaceID"] as? Int }
+            return DisplaySpaces(display: id, current: current, desktops: desktops)
+        }
     }
 
     private static func windowInfo(_ options: CGWindowListOption) -> [[String: Any]] {

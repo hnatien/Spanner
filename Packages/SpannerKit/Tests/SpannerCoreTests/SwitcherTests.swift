@@ -39,9 +39,10 @@ struct SystemSwitcherPolicyTests {
 struct WindowListTests {
     func window(_ id: UInt32, pid: Int32 = 10, title: String = "Doc", size: Double = 500, layer: Int = 0,
                 onScreen: Bool = true, ax: Bool = true, minimized: Bool = false,
-                orderedOut: Bool = false) -> WindowCandidate {
+                orderedOut: Bool = false, behindFullScreen: Bool = false) -> WindowCandidate {
         WindowCandidate(id: id, pid: pid, appName: "App", title: title, width: size, height: size, layer: layer,
-                        isOnScreen: onScreen, hasAXElement: ax, isMinimized: minimized, isOrderedOut: orderedOut)
+                        isOnScreen: onScreen, hasAXElement: ax, isMinimized: minimized, isOrderedOut: orderedOut,
+                        isBehindFullScreen: behindFullScreen)
     }
 
     @Test func closedButRetainedWindowsAreDropped() {
@@ -97,11 +98,131 @@ struct WindowListTests {
         #expect(noElsewhere.map(\.id) == [1, 2])
     }
 
+    @Test func windowsBehindFullScreenAreNotOnAnotherSpace() {
+        let behind = window(2, onScreen: false, behindFullScreen: true)
+        #expect(!behind.isElsewhere)
+        #expect(window(3, onScreen: false).isElsewhere)
+        let list = WindowListBuilder.build([window(1), behind, window(3, onScreen: false)], zOrder: [1],
+                                           appRecency: [], options: .init(includeOtherSpaces: false))
+        #expect(list.map(\.id) == [1, 2])
+    }
+
+    @Test func behindFullScreenStillFallsToTheOrderedOutRule() {
+        let closed = window(2, onScreen: false, orderedOut: true, behindFullScreen: true)
+        #expect(!WindowListBuilder.isEligible(closed, options: .init()))
+        let minimized = window(3, onScreen: false, minimized: true, orderedOut: true)
+        #expect(WindowListBuilder.isEligible(minimized, options: .init(includeOtherSpaces: false)))
+    }
+
     @Test func currentAppModeKeepsOnlyThatApp() {
         let candidates = [window(1, pid: 10), window(2, pid: 20), window(3, pid: 10, onScreen: false)]
         let list = WindowListBuilder.build(candidates, zOrder: [2, 1], appRecency: [],
                                            options: .init(onlyPID: 10))
         #expect(list.map(\.id) == [1, 3])
+    }
+}
+
+@Suite("Window placement")
+struct WindowPlacementTests {
+    func classify(orderedIn: Bool?, spaces: [Int]?, visible: Set<Int> = [1],
+                  covered: Set<Int> = []) -> (isOrderedOut: Bool, isBehindFullScreen: Bool) {
+        WindowPlacement.classify(isOrderedIn: orderedIn, spaces: { spaces }, visibleSpaces: visible,
+                                 coveredDesktops: covered)
+    }
+
+    @Test func orderedInWindowOnAnotherSpaceIsKept() {
+        let placement = classify(orderedIn: true, spaces: [2])
+        #expect(!placement.isOrderedOut && !placement.isBehindFullScreen)
+    }
+
+    @Test func windowOnNoSpaceIsOrderedOut() {
+        #expect(classify(orderedIn: false, spaces: []).isOrderedOut)
+        #expect(classify(orderedIn: nil, spaces: []).isOrderedOut)
+    }
+
+    @Test func notOrderedInOnAShownSpaceIsOrderedOut() {
+        #expect(classify(orderedIn: false, spaces: [1]).isOrderedOut)
+    }
+
+    /// A minimized window on another Space is not ordered in either, and
+    /// has no Accessibility element to say it is minimized.
+    @Test func notOrderedInOnAnotherSpaceIsKept() {
+        #expect(!classify(orderedIn: false, spaces: [2]).isOrderedOut)
+    }
+
+    @Test func failedSpacesLookupKeepsTheWindow() {
+        #expect(!classify(orderedIn: false, spaces: nil).isOrderedOut)
+        #expect(!classify(orderedIn: nil, spaces: nil).isOrderedOut)
+    }
+
+    @Test func orderedInOnACoveredDesktopIsBehindFullScreen() {
+        let placement = classify(orderedIn: true, spaces: [2], visible: [200], covered: [2])
+        #expect(!placement.isOrderedOut && placement.isBehindFullScreen)
+    }
+
+    @Test func notOrderedInOnACoveredDesktopIsElsewhere() {
+        let placement = classify(orderedIn: false, spaces: [2], visible: [200], covered: [2])
+        #expect(!placement.isOrderedOut && !placement.isBehindFullScreen)
+    }
+
+    @Test func spacesAreNotReadForAnOrderedInWindowWithNothingCovered() {
+        var reads = 0
+        _ = WindowPlacement.classify(isOrderedIn: true, spaces: { reads += 1; return [2] }, visibleSpaces: [1],
+                                     coveredDesktops: [])
+        #expect(reads == 0)
+    }
+}
+
+@Suite("Desktop under full screen")
+struct DesktopMemoryTests {
+    let display = "main"
+
+    @Test func onlyDesktopIsCoveredByFullScreen() {
+        let memory = DesktopMemory()
+        #expect(memory.coveredDesktops([.init(display: display, current: 200, desktops: [1])]) == [1])
+    }
+
+    @Test func showingADesktopCoversNothing() {
+        var memory = DesktopMemory()
+        let spaces = [DisplaySpaces(display: display, current: 1, desktops: [1, 2])]
+        memory.note(spaces)
+        #expect(memory.coveredDesktops(spaces).isEmpty)
+    }
+
+    @Test func remembersTheDesktopLastShown() {
+        var memory = DesktopMemory()
+        memory.note([.init(display: display, current: 2, desktops: [1, 2])])
+        let fullScreen = [DisplaySpaces(display: display, current: 200, desktops: [1, 2])]
+        memory.note(fullScreen)
+        #expect(memory.coveredDesktops(fullScreen) == [2])
+    }
+
+    @Test func unknownDesktopAmongSeveralIsLeftOut() {
+        let memory = DesktopMemory()
+        #expect(memory.coveredDesktops([.init(display: display, current: 200, desktops: [1, 2])]).isEmpty)
+    }
+
+    @Test func forgetsARemovedDesktop() {
+        var memory = DesktopMemory()
+        memory.note([.init(display: display, current: 3, desktops: [1, 3])])
+        #expect(memory.coveredDesktops([.init(display: display, current: 200, desktops: [1])]) == [1])
+    }
+
+    @Test func forgetsADetachedDisplay() {
+        var memory = DesktopMemory()
+        memory.note([.init(display: "a", current: 2, desktops: [1, 2]),
+                     .init(display: "b", current: 5, desktops: [4, 5])])
+        memory.note([.init(display: "a", current: 2, desktops: [1, 2])])
+        #expect(memory.coveredDesktops([.init(display: "b", current: 200, desktops: [4, 5])]).isEmpty)
+    }
+
+    @Test func eachDisplayKeepsItsOwnDesktop() {
+        var memory = DesktopMemory()
+        memory.note([.init(display: "a", current: 2, desktops: [1, 2]),
+                     .init(display: "b", current: 5, desktops: [4, 5])])
+        let spaces = [DisplaySpaces(display: "a", current: 200, desktops: [1, 2]),
+                      DisplaySpaces(display: "b", current: 5, desktops: [4, 5])]
+        #expect(memory.coveredDesktops(spaces) == [2])
     }
 }
 

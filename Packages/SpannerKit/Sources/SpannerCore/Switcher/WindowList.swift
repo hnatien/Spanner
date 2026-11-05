@@ -14,13 +14,17 @@ public struct WindowCandidate: Equatable, Sendable, Identifiable {
     public let isOnScreen: Bool
     public let hasAXElement: Bool
     public let isMinimized: Bool
-    /// Off screen although its app is not hidden and it is on no Space the
-    /// user can't currently see: the app closed it but kept it alive (as
-    /// FaceTime and Chrome do), so it is not really there.
+    /// Off screen although its app is not hidden, and not on a Space the user
+    /// can't currently see: the app closed it but kept it alive (as FaceTime
+    /// and Chrome do), so it is not really there. See `WindowPlacement`.
     public let isOrderedOut: Bool
+    /// Off screen only because a full-screen Space covers the desktop it is
+    /// on, so it is still on the user's current desktop.
+    public let isBehindFullScreen: Bool
 
     public init(id: UInt32, pid: Int32, appName: String, title: String, width: Double, height: Double,
-                layer: Int, isOnScreen: Bool, hasAXElement: Bool, isMinimized: Bool, isOrderedOut: Bool = false) {
+                layer: Int, isOnScreen: Bool, hasAXElement: Bool, isMinimized: Bool, isOrderedOut: Bool = false,
+                isBehindFullScreen: Bool = false) {
         self.id = id
         self.pid = pid
         self.appName = appName
@@ -32,10 +36,40 @@ public struct WindowCandidate: Equatable, Sendable, Identifiable {
         self.hasAXElement = hasAXElement
         self.isMinimized = isMinimized
         self.isOrderedOut = isOrderedOut
+        self.isBehindFullScreen = isBehindFullScreen
     }
 
-    /// Not visible, not minimized: on another Space or in a hidden app.
-    public var isElsewhere: Bool { !isOnScreen && !isMinimized }
+    /// Not visible, not minimized, not just behind full screen: on another
+    /// Space or in a hidden app.
+    public var isElsewhere: Bool { !isOnScreen && !isMinimized && !isBehindFullScreen }
+}
+
+/// Works out why an off-screen window of a visible app is off screen, from
+/// what the window server says about it.
+public enum WindowPlacement {
+    /// - Parameters:
+    ///   - isOrderedIn: the window server's ordered-in flag, nil if the call
+    ///     failed. A minimized window is not ordered in either, and keeps its
+    ///     Space just as a closed-but-retained one does, so `false` alone
+    ///     does not mean the window is gone.
+    ///   - spaces: the window's Spaces, nil if the lookup failed. Only read
+    ///     when the answer depends on it.
+    ///   - visibleSpaces: the Space each display is showing.
+    ///   - coveredDesktops: desktops hidden under a full-screen Space.
+    public static func classify(isOrderedIn: Bool?, spaces: () -> [Int]?, visibleSpaces: Set<Int>,
+                                coveredDesktops: Set<Int>) -> (isOrderedOut: Bool, isBehindFullScreen: Bool) {
+        if isOrderedIn == true {
+            guard !coveredDesktops.isEmpty, let spaces = spaces() else { return (false, false) }
+            return (false, !coveredDesktops.isDisjoint(with: spaces))
+        }
+        // Not ordered in, or unknown. A window on no Space was closed; one on
+        // a Space being shown would be on screen unless closed or minimized,
+        // and a minimized one is kept by its minimized flag. One on a Space
+        // not being shown may just be minimized there, so it is kept as
+        // elsewhere rather than dropped.
+        guard let spaces = spaces() else { return (false, false) }
+        return (spaces.isEmpty || !visibleSpaces.isDisjoint(with: spaces), false)
+    }
 }
 
 public struct WindowListOptions: Equatable, Sendable {

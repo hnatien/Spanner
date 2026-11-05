@@ -28,6 +28,12 @@ nonisolated func CGSCopySpacesForWindows(_ connection: Int32, _ mask: Int32, _ w
 @_silgen_name("CGSCopyManagedDisplaySpaces")
 nonisolated func CGSCopyManagedDisplaySpaces(_ connection: Int32) -> Unmanaged<CFArray>?
 
+/// False for a window its app closed but kept alive; true for one that is
+/// merely on a Space not being shown.
+@_silgen_name("CGSWindowIsOrderedIn")
+nonisolated func CGSWindowIsOrderedIn(_ connection: Int32, _ windowID: CGWindowID,
+                                      _ isOrderedIn: UnsafeMutablePointer<DarwinBoolean>) -> CGError
+
 /// Owns the macOS Command-Tab shortcut while the Command-Tab trigger is in
 /// use. See `SystemSwitcherPolicy` for why the ledger exists.
 enum SystemSwitcher {
