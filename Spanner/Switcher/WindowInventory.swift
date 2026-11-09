@@ -150,14 +150,15 @@ final class WindowInventory {
     }
 
     /// Brings a window forward: unhide its app, unminimize, raise it, then
-    /// make the app frontmost through Accessibility, which works from a
-    /// background app where `NSRunningApplication.activate()` may be refused
-    /// under macOS 14+ cooperative activation.
+    /// make its app frontmost with only that window brought forward, so the
+    /// app's other windows keep their place below the previous window and
+    /// the next switch returns to it. Works from a background app, where
+    /// `NSRunningApplication.activate()` may be refused under macOS 14+
+    /// cooperative activation.
     ///
-    /// Known limitation: windows on another Space have no Accessibility
-    /// element, so only their app is activated (macOS then moves to a Space
-    /// with that app's windows). Precise cross-Space focus needs the private
-    /// SkyLight front-process calls AltTab uses.
+    /// Falls back to activating the whole app if the window server call
+    /// fails. Windows on another Space have no Accessibility element; the
+    /// window server call still moves to the window's Space.
     func focus(_ window: SwitcherWindow) {
         if window.pid == Self.ownPID {
             focusOwn(window.id)
@@ -173,9 +174,11 @@ final class WindowInventory {
             AXUIElementSetAttributeValue(element, AXAttribute.main, kCFBooleanTrue)
             AXUIElementPerformAction(element, AXAttribute.raise)
         }
-        let appElement = AXUIElementCreateApplication(window.pid)
-        AXUIElementSetAttributeValue(appElement, AXAttribute.frontmost, kCFBooleanTrue)
-        app?.activate()
+        if !Self.makeFrontmost(pid: window.pid, windowID: window.id) {
+            let appElement = AXUIElementCreateApplication(window.pid)
+            AXUIElementSetAttributeValue(appElement, AXAttribute.frontmost, kCFBooleanTrue)
+            app?.activate()
+        }
         if let element {
             // The app may re-order its own windows as it activates; raise
             // again once activation has landed.
@@ -184,6 +187,30 @@ final class WindowInventory {
                 AXUIElementPerformAction(element, AXAttribute.raise)
             }
         }
+    }
+
+    /// Makes `pid` the front process with only `windowID` brought forward,
+    /// then makes that window key, as AltTab does. False if the window
+    /// server refused or the calls are missing.
+    private static func makeFrontmost(pid: pid_t, windowID: CGWindowID) -> Bool {
+        guard let setFrontProcess = SkyLight.setFrontProcess, let postEventRecord = SkyLight.postEventRecord else {
+            return false
+        }
+        var psn = ProcessSerialNumber()
+        guard GetProcessForPID(pid, &psn) == noErr,
+              setFrontProcess(&psn, windowID, SkyLight.userGenerated) == .success else { return false }
+        // Key-window event record: 0xf8 bytes, window ID at 0x3c, sent once
+        // as "focus out" (0x01) and once as "focus in" (0x02).
+        var bytes = [UInt8](repeating: 0, count: 0xf8)
+        bytes[0x04] = 0xf8
+        bytes[0x3a] = 0x10
+        withUnsafeBytes(of: windowID.littleEndian) { bytes.replaceSubrange(0x3c..<0x40, with: $0) }
+        bytes.replaceSubrange(0x20..<0x30, with: repeatElement(0xff, count: 0x10))
+        for phase: UInt8 in [0x01, 0x02] {
+            bytes[0x08] = phase
+            _ = postEventRecord(&psn, &bytes)
+        }
+        return true
     }
 
     /// Spanner's own windows are raised through AppKit directly.

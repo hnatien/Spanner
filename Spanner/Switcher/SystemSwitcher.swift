@@ -34,6 +34,33 @@ nonisolated func CGSCopyManagedDisplaySpaces(_ connection: Int32) -> Unmanaged<C
 nonisolated func CGSWindowIsOrderedIn(_ connection: Int32, _ windowID: CGWindowID,
                                       _ isOrderedIn: UnsafeMutablePointer<DarwinBoolean>) -> CGError
 
+@_silgen_name("GetProcessForPID")
+nonisolated func GetProcessForPID(_ pid: pid_t, _ psn: UnsafeMutablePointer<ProcessSerialNumber>) -> OSStatus
+
+/// SkyLight calls that CoreGraphics does not re-export, looked up at run
+/// time so a macOS without them falls back instead of failing to launch.
+enum SkyLight {
+    /// Makes a process frontmost. With `userGenerated` and a window ID only
+    /// that window comes forward, unlike activating the app, which brings all
+    /// of its windows above every other app's.
+    typealias SetFrontProcess = @convention(c) (UnsafeMutablePointer<ProcessSerialNumber>, CGWindowID, UInt32)
+        -> CGError
+    /// Posts a raw window server event record to a process.
+    typealias PostEventRecord = @convention(c) (UnsafeMutablePointer<ProcessSerialNumber>, UnsafeMutablePointer<UInt8>)
+        -> CGError
+
+    static let userGenerated: UInt32 = 0x200
+
+    static let setFrontProcess: SetFrontProcess? = symbol("_SLPSSetFrontProcessWithOptions")
+    static let postEventRecord: PostEventRecord? = symbol("SLPSPostEventRecordTo")
+
+    private static func symbol<T>(_ name: String) -> T? {
+        guard let handle = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY),
+              let pointer = dlsym(handle, name) else { return nil }
+        return unsafeBitCast(pointer, to: T.self)
+    }
+}
+
 /// Owns the macOS Command-Tab shortcut while the Command-Tab trigger is in
 /// use. See `SystemSwitcherPolicy` for why the ledger exists.
 enum SystemSwitcher {
