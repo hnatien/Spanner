@@ -9,9 +9,6 @@ struct BatteryMenuSummary: View {
     var body: some View {
         if let snapshot = battery.snapshot {
             content(snapshot)
-        } else if battery.hasBattery == false {
-            Label("No battery in this Mac", systemImage: "powerplug.portrait")
-                .foregroundStyle(.secondary)
         } else {
             ProgressView().controlSize(.small).frame(maxWidth: .infinity)
         }

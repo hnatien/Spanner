@@ -4,8 +4,8 @@ struct MainWindow: View {
     @Environment(AppModel.self) private var model
     @Environment(PermissionsManager.self) private var permissions
 
-    private static let featureSections: [AppSection] = [.battery, .switcher, .snapping, .mouse, .sound, .displays, .keepAwake]
-    private static let appSections: [AppSection] = [.permissions, .general]
+    private static let featureSections: [AppSection] = [.battery, .system, .switcher, .snapping, .mouse, .sound, .displays, .keepAwake]
+    private static let appSections: [AppSection] = [.menuBar, .permissions, .general]
 
     var body: some View {
         NavigationSplitView {
@@ -44,12 +44,14 @@ struct MainWindow: View {
     private func detail(for section: AppSection) -> some View {
         switch section {
         case .battery: BatteryDashboardPage()
+        case .system: SystemPage()
         case .switcher: SwitcherSettingsPage()
         case .snapping: SnappingPage()
         case .mouse: MousePage()
         case .sound: SoundPage()
         case .displays: DisplaysPage()
         case .keepAwake: KeepAwakePage()
+        case .menuBar: MenuBarSettingsPage()
         case .permissions: PermissionsPage()
         case .general: GeneralPage()
         }

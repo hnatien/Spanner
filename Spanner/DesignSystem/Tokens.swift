@@ -25,12 +25,14 @@ enum CornerRadius {
 /// recognisable at a glance, the way System Settings colours its panes.
 enum FeatureTint {
     static let battery = Color.green
+    static let system = Color.blue
     static let switcher = Color.indigo
     static let snapping = Color.cyan
     static let mouse = Color.pink
     static let sound = Color.red
     static let displays = Color.purple
     static let keepAwake = Color.orange
+    static let menuBar = Color.teal
     static let permissions = Color.blue
     static let general = Color.gray
     static let updates = Color.teal

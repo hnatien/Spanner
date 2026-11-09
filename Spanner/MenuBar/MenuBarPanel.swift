@@ -32,6 +32,12 @@ struct MenuBarPanel: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(PanelTile.battery.storageKey) private var showsBattery = true
+    @AppStorage(PanelTile.system.storageKey) private var showsSystem = true
+    @AppStorage(PanelTile.headphones.storageKey) private var showsHeadphones = true
+    @AppStorage(PanelTile.keepAwake.storageKey) private var showsKeepAwake = true
+    @AppStorage(PanelTile.switcher.storageKey) private var showsSwitcher = true
+    @AppStorage(PanelTile.displays.storageKey) private var showsDisplays = true
     /// The content's natural height, animated whenever it changes so the
     /// window resizes in step with the sections moving inside it.
     @State private var height: CGFloat?
@@ -45,25 +51,45 @@ struct MenuBarPanel: View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             header
 
-            PanelSection {
-                BatteryMenuSummary()
-            }
-            .onTapGesture { open(.battery) }
-
-            ForEach(shownHeadphones) { headphone in
-                HeadphonesMenuTile(headphone: headphone)
-                    .transition(reduceMotion ? .opacity : .headphoneTile)
+            // A Mac without a battery has nothing to show here.
+            if showsBattery && battery.hasBattery != false {
+                PanelSection {
+                    BatteryMenuSummary()
+                }
+                .onTapGesture { open(.battery) }
             }
 
-            PanelSection {
-                VStack(spacing: Spacing.m) {
-                    KeepAwakeMenuRow()
-                    Divider()
-                    SwitcherMenuRow()
+            if showsSystem {
+                PanelSection {
+                    SystemMenuSummary()
+                }
+                .onTapGesture { open(.system) }
+            }
+
+            if showsHeadphones {
+                ForEach(shownHeadphones) { headphone in
+                    HeadphonesMenuTile(headphone: headphone)
+                        .transition(reduceMotion ? .opacity : .headphoneTile)
                 }
             }
 
-            if displays.displays.contains(where: \.hasDDC) {
+            if showsKeepAwake || showsSwitcher {
+                PanelSection {
+                    VStack(spacing: Spacing.m) {
+                        if showsKeepAwake {
+                            KeepAwakeMenuRow()
+                        }
+                        if showsKeepAwake && showsSwitcher {
+                            Divider()
+                        }
+                        if showsSwitcher {
+                            SwitcherMenuRow()
+                        }
+                    }
+                }
+            }
+
+            if showsDisplays && displays.displays.contains(where: \.hasDDC) {
                 PanelSection {
                     DisplaysMenuSection()
                 }

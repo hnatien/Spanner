@@ -71,11 +71,9 @@ final class EnergyMonitor {
 }
 
 /// Reads the energy counter of every readable process. Used from one task
-/// at a time, so its path cache needs no lock.
+/// at a time, so its identity cache needs no lock.
 private nonisolated final class EnergySampler: @unchecked Sendable {
-    private nonisolated(unsafe) var names: [pid_t: (key: String, name: String)] = [:]
-    /// Whether each bundle seen so far counts as an app, by bundle path.
-    private nonisolated(unsafe) var bundles: [String: Bool] = [:]
+    private let identifier = ProcessIdentifier()
 
     nonisolated init() {}
 
@@ -84,8 +82,6 @@ private nonisolated final class EnergySampler: @unchecked Sendable {
         var pids = [pid_t](repeating: 0, count: max(capacity, 64))
         let count = Int(proc_listallpids(&pids, Int32(pids.count * MemoryLayout<pid_t>.size)))
         guard count > 0 else { return [] }
-        let live = Set(pids.prefix(count))
-        names = names.filter { live.contains($0.key) }
 
         var samples: [ProcessEnergySample] = []
         samples.reserveCapacity(count)
@@ -97,32 +93,11 @@ private nonisolated final class EnergySampler: @unchecked Sendable {
                 }
             }
             guard status == 0 else { continue }
-            let identity = names[pid] ?? identify(pid)
-            names[pid] = identity
+            let identity = identifier.identity(of: pid, startTime: info.ri_proc_start_abstime)
             samples.append(ProcessEnergySample(pid: pid, energyNanojoules: info.ri_energy_nj,
                                                groupKey: identity.key, name: identity.name))
         }
+        identifier.endPass()
         return samples
-    }
-
-    private nonisolated func identify(_ pid: pid_t) -> (key: String, name: String) {
-        guard let path = ProcessPath.executable(of: pid) else { return ("pid:\(pid)", "PID \(pid)") }
-        let responsible = responsibility_get_pid_responsible_for_pid(pid)
-        let responsiblePath = responsible > 0 && responsible != pid ? ProcessPath.executable(of: responsible) : nil
-        if let app = AppBundlePath.owningApp(executable: path, responsible: responsiblePath, isApp: isApp) {
-            let name = ((app as NSString).lastPathComponent as NSString).deletingPathExtension
-            return (app, name)
-        }
-        let name = (path as NSString).lastPathComponent
-        return (path, name)
-    }
-
-    /// Bundles whose Info.plist can't be read count as apps, as before.
-    private nonisolated func isApp(_ bundle: String) -> Bool {
-        if let known = bundles[bundle] { return known }
-        let info = NSDictionary(contentsOf: URL(fileURLWithPath: bundle).appending(path: "Contents/Info.plist"))
-        let result = (info as? [String: Any]).map { AppBundlePath.isApp(at: bundle, info: $0) } ?? true
-        bundles[bundle] = result
-        return result
     }
 }

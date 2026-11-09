@@ -7,7 +7,7 @@ struct GeneralPage: View {
 
     var body: some View {
         Page {
-            PageHeader(title: "General", subtitle: "Startup, headphones, updates and information about Spanner.",
+            PageHeader(title: "General", subtitle: "Startup, updates and information about Spanner.",
                        symbol: AppSection.general.symbol, tint: FeatureTint.general)
 
             SettingsGroup(title: "Startup",
@@ -30,8 +30,6 @@ struct GeneralPage: View {
                 }
             }
 
-            HeadphonesGroup()
-
             UpdatesGroup()
 
             SettingsGroup(title: "About") {
@@ -47,33 +45,6 @@ struct GeneralPage: View {
             }
         }
         .onAppear(perform: loginItem.refresh)
-    }
-}
-
-private struct HeadphonesGroup: View {
-    @Environment(HeadphoneMonitor.self) private var headphones
-    @Environment(PermissionsManager.self) private var permissions
-
-    var body: some View {
-        @Bindable var headphones = headphones
-        let granted = permissions.isGranted(.bluetooth)
-        SettingsGroup(title: "Headphones",
-                      footer: granted
-                          ? "Connected AirPods and headphones appear in the menu bar panel with their battery. Nothing leaves your Mac."
-                          : "Grant Bluetooth to see your AirPods' and headphones' battery in the menu bar panel. Nothing leaves your Mac.") {
-            if !granted {
-                PermissionRow(permission: .bluetooth)
-            }
-            SettingsRow(title: "Show battery when you put them on",
-                        subtitle: "Pops up on screen when you put your AirPods in, or when other headphones connect.",
-                        symbol: "airpods.pro", tint: FeatureTint.switcher) {
-                Toggle("Show battery when you put them on", isOn: $headphones.showsHUD)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .disabled(!granted)
-            }
-        }
-        .animation(.spanner, value: granted)
     }
 }
 

@@ -40,6 +40,7 @@ struct BatteryDashboardPage: View {
             } else {
                 ProgressView().frame(maxWidth: .infinity)
             }
+            HeadphonesGroup()
         }
         // Fast polling only while the window is in the active app: each
         // sample animates numbers across the page, which costs ~20% of a
@@ -47,6 +48,35 @@ struct BatteryDashboardPage: View {
         .onAppear { battery.isDashboardVisible = appearsActive }
         .onChange(of: appearsActive) { _, active in battery.isDashboardVisible = active }
         .onDisappear { battery.isDashboardVisible = false }
+    }
+}
+
+// MARK: - Headphones
+
+private struct HeadphonesGroup: View {
+    @Environment(HeadphoneMonitor.self) private var headphones
+    @Environment(PermissionsManager.self) private var permissions
+
+    var body: some View {
+        @Bindable var headphones = headphones
+        let granted = permissions.isGranted(.bluetooth)
+        SettingsGroup(title: "Headphones",
+                      footer: granted
+                          ? "To show or hide headphones in the menu bar panel, use the Menu Bar page. Nothing leaves your Mac."
+                          : "Grant Bluetooth to read your AirPods' and headphones' battery. Nothing leaves your Mac.") {
+            if !granted {
+                PermissionRow(permission: .bluetooth)
+            }
+            SettingsRow(title: "Show battery when you put them on",
+                        subtitle: "Pops up on screen when you put your AirPods in, or when other headphones connect.",
+                        symbol: "airpods.pro", tint: FeatureTint.switcher) {
+                Toggle("Show battery when you put them on", isOn: $headphones.showsHUD)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(!granted)
+            }
+        }
+        .animation(.spanner, value: granted)
     }
 }
 
