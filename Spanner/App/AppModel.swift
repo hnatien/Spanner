@@ -1,4 +1,5 @@
 import Observation
+import SpannerCore
 import SwiftUI
 
 /// Owns every long-lived service. Views receive the individual services
@@ -7,6 +8,8 @@ import SwiftUI
 @Observable
 final class AppModel {
     let permissions = PermissionsManager()
+    /// Which features are on. Starts and stops the services behind each.
+    let features = FeatureRegistry()
     let battery = BatteryService()
     let headphones: HeadphoneMonitor
     let energy = EnergyMonitor()
@@ -24,7 +27,12 @@ final class AppModel {
 
     /// Section shown in the main window; menu bar shortcuts set it before
     /// opening the window.
-    var selectedSection: AppSection = .battery
+    var selectedSection: AppSection
+
+    /// Where the main window opens: the first feature that is on.
+    var homeSection: AppSection {
+        features.enabledFeatures.first.map(AppSection.init) ?? .features
+    }
 
     init() {
         headphones = HeadphoneMonitor(permissions: permissions)
@@ -33,41 +41,51 @@ final class AppModel {
         mouse = MouseController(permissions: permissions)
         sound = SoundController(permissions: permissions, hotkeys: hotkeys)
         displays = DisplayController(permissions: permissions)
+        // Placeholder: `homeSection` can't be read until every property is set.
+        selectedSection = .features
+
+        features.register(.battery, [battery, headphones, energy])
+        features.register(.system, [system])
+        features.register(.switcher, [switcher])
+        features.register(.snapping, [snapping])
+        features.register(.mouse, [mouse])
+        features.register(.sound, [sound])
+        features.register(.displays, [displays])
+        features.register(.keepAwake, [keepAwake])
+        selectedSection = homeSection
     }
 
     func start() {
         permissions.startMonitoring()
-        battery.start()
-        headphones.start()
-        energy.start()
-        switcher.start()
-        snapping.start()
-        mouse.start()
-        sound.start()
-        displays.start()
+        features.start()
     }
 
     /// Runs on quit. Must restore anything Spanner changed system-wide.
     func shutdown() {
-        displays.stop()
-        sound.stop()
-        mouse.stop()
-        snapping.stop()
-        switcher.stop()
-        keepAwake.stop()
-        system.stop()
-        energy.stop()
-        headphones.stop()
-        battery.stop()
+        features.stop()
         permissions.stopMonitoring()
     }
 }
 
 /// Sections of the main window, in sidebar order.
 enum AppSection: String, CaseIterable, Identifiable {
-    case battery, system, switcher, snapping, mouse, sound, displays, keepAwake, menuBar, permissions, general
+    case battery, system, switcher, snapping, mouse, sound, displays, keepAwake, features, menuBar, permissions, general
 
     var id: Self { self }
+
+    /// The page of a feature.
+    init(_ feature: Feature) {
+        self = switch feature {
+        case .battery: .battery
+        case .system: .system
+        case .switcher: .switcher
+        case .snapping: .snapping
+        case .mouse: .mouse
+        case .sound: .sound
+        case .displays: .displays
+        case .keepAwake: .keepAwake
+        }
+    }
 
     var title: String {
         switch self {
@@ -79,6 +97,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .sound: "Sound"
         case .displays: "Displays"
         case .keepAwake: "Keep Awake"
+        case .features: "Manage Features"
         case .menuBar: "Menu Bar"
         case .permissions: "Permissions"
         case .general: "General"
@@ -95,6 +114,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .sound: "speaker.wave.2.fill"
         case .displays: "sun.max.fill"
         case .keepAwake: "cup.and.heat.waves.fill"
+        case .features: "puzzlepiece.extension.fill"
         case .menuBar: "menubar.rectangle"
         case .permissions: "hand.raised.fill"
         case .general: "gearshape.fill"
@@ -111,6 +131,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .sound: FeatureTint.sound
         case .displays: FeatureTint.displays
         case .keepAwake: FeatureTint.keepAwake
+        case .features: FeatureTint.features
         case .menuBar: FeatureTint.menuBar
         case .permissions: FeatureTint.permissions
         case .general: FeatureTint.general
@@ -129,6 +150,7 @@ extension View {
         self
             .environment(model)
             .environment(model.permissions)
+            .environment(model.features)
             .environment(model.battery)
             .environment(model.headphones)
             .environment(model.energy)

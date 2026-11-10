@@ -32,6 +32,7 @@ enum FeatureTint {
     static let sound = Color.red
     static let displays = Color.purple
     static let keepAwake = Color.orange
+    static let features = Color.mint
     static let menuBar = Color.teal
     static let permissions = Color.blue
     static let general = Color.gray

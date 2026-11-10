@@ -26,18 +26,25 @@ struct MenuBarIcon: View {
 struct MenuBarPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(PermissionsManager.self) private var permissions
+    @Environment(FeatureRegistry.self) private var features
     @Environment(BatteryService.self) private var battery
     @Environment(HeadphoneMonitor.self) private var headphones
     @Environment(DisplayController.self) private var displays
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(PanelTile.battery.storageKey) private var showsBattery = true
-    @AppStorage(PanelTile.system.storageKey) private var showsSystem = true
-    @AppStorage(PanelTile.headphones.storageKey) private var showsHeadphones = true
-    @AppStorage(PanelTile.keepAwake.storageKey) private var showsKeepAwake = true
-    @AppStorage(PanelTile.switcher.storageKey) private var showsSwitcher = true
-    @AppStorage(PanelTile.displays.storageKey) private var showsDisplays = true
+    @AppStorage(PanelTile.battery.storageKey) private var batteryTileOn = true
+    @AppStorage(PanelTile.system.storageKey) private var systemTileOn = true
+    @AppStorage(PanelTile.headphones.storageKey) private var headphonesTileOn = true
+    @AppStorage(PanelTile.keepAwake.storageKey) private var keepAwakeTileOn = true
+    @AppStorage(PanelTile.switcher.storageKey) private var switcherTileOn = true
+    @AppStorage(PanelTile.displays.storageKey) private var displaysTileOn = true
+    private var showsBattery: Bool { shows(.battery, batteryTileOn) }
+    private var showsSystem: Bool { shows(.system, systemTileOn) }
+    private var showsHeadphones: Bool { shows(.headphones, headphonesTileOn) }
+    private var showsKeepAwake: Bool { shows(.keepAwake, keepAwakeTileOn) }
+    private var showsSwitcher: Bool { shows(.switcher, switcherTileOn) }
+    private var showsDisplays: Bool { shows(.displays, displaysTileOn) }
     /// The content's natural height, animated whenever it changes so the
     /// window resizes in step with the sections moving inside it.
     @State private var height: CGFloat?
@@ -95,7 +102,7 @@ struct MenuBarPanel: View {
                 }
             }
 
-            if !permissions.allGranted {
+            if features.isEnabled(.switcher) && !permissions.allGranted {
                 permissionsBanner
             }
 
@@ -136,6 +143,11 @@ struct MenuBarPanel: View {
             battery.isDetailedRefresh = true
         }
         .onDisappear { battery.isDetailedRefresh = false }
+    }
+
+    /// A tile needs both its own switch and its feature turned on.
+    private func shows(_ tile: PanelTile, _ isOn: Bool) -> Bool {
+        isOn && features.isEnabled(tile.feature)
     }
 
     private var resizeAnimation: Animation {
@@ -182,7 +194,7 @@ struct MenuBarPanel: View {
 
     private var footer: some View {
         HStack {
-            Button("Open Spanner") { open(.battery) }
+            Button("Open Spanner") { open(model.homeSection) }
             Spacer()
             Button("Quit") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")

@@ -7,7 +7,7 @@ import SpannerCore
 /// Keeps the Mac (and optionally the display) awake with an IOKit power
 /// assertion, the same mechanism `caffeinate` uses. No permission needed.
 @Observable
-final class KeepAwakeController {
+final class KeepAwakeController: FeatureModule {
     private(set) var session: KeepAwakeSession?
     private(set) var lastError: String?
 

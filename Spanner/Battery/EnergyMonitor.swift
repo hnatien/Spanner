@@ -17,7 +17,7 @@ nonisolated func responsibility_get_pid_responsible_for_pid(_ pid: pid_t) -> pid
 /// person owns; root-owned daemons (WindowServer, kernel_task) return EPERM
 /// and are left out, so totals cover apps, not the whole system.
 @Observable
-final class EnergyMonitor {
+final class EnergyMonitor: FeatureModule {
     private(set) var apps: [AppPower] = []
     /// Everything no app accounts for, as one row.
     private(set) var background: BackgroundPower?

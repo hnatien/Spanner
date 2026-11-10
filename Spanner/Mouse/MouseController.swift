@@ -9,7 +9,7 @@ import SpannerCore
 /// Trackpads and Magic Mouse send continuous scroll events and are left
 /// alone; only line-based wheel events are rewritten.
 @Observable
-final class MouseController {
+final class MouseController: FeatureModule {
     enum Status: Equatable {
         case disabled, needsPermission, ready
         /// macOS refused the event tap even though Accessibility looks granted.
@@ -30,6 +30,9 @@ final class MouseController {
     @ObservationIgnored private var systemNatural = true
     @ObservationIgnored private var systemNaturalReadAt: TimeInterval = 0
     @ObservationIgnored private var isStarted = false
+    /// A change is being waited for. Survives `stop`, so starting again
+    /// doesn't add a second wait beside it.
+    @ObservationIgnored private var isObserving = false
 
     init(permissions: PermissionsManager) {
         self.permissions = permissions
@@ -50,12 +53,16 @@ final class MouseController {
     }
 
     private func observeChanges() {
+        guard !isObserving else { return }
+        isObserving = true
         withObservationTracking {
             _ = permissions.accessibilityGranted
             _ = settings.isEnabled
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.isStarted else { return }
+                guard let self else { return }
+                self.isObserving = false
+                guard self.isStarted else { return }
                 self.reconcile()
                 self.observeChanges()
             }

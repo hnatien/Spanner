@@ -12,7 +12,7 @@ import SpannerCore
 /// polled: often while headphones are connected, rarely otherwise. A connect
 /// notification cuts the wait when headphones first come in.
 @Observable
-final class HeadphoneMonitor {
+final class HeadphoneMonitor: FeatureModule {
     private(set) var headphones: [HeadphoneBattery] = []
 
     /// Whether putting headphones on shows their battery on screen.

@@ -20,7 +20,7 @@ struct MixerApp: Identifiable, Equatable {
 /// shortcut. Device switching and mic mute use public Core Audio properties
 /// and need no permission; the mixer needs System Audio Recording.
 @Observable
-final class SoundController {
+final class SoundController: FeatureModule {
     let permissions: PermissionsManager
     let settings = SoundSettings()
 
@@ -50,6 +50,9 @@ final class SoundController {
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var appInfoCache: [pid_t: (key: String, name: String, bundlePath: String?)] = [:]
     @ObservationIgnored private var isStarted = false
+    /// A change is being waited for. Survives `stop`, so starting again
+    /// doesn't add a second wait beside it.
+    @ObservationIgnored private var isObserving = false
     @ObservationIgnored private let hud = HUDPanel()
     private static let log = Logger(subsystem: "dev.spanner.Spanner", category: "Sound")
 
@@ -101,12 +104,16 @@ final class SoundController {
     }
 
     private func observeChanges() {
+        guard !isObserving else { return }
+        isObserving = true
         withObservationTracking {
             _ = settings.micMuteShortcut
             _ = permissions.systemAudioGranted
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.isStarted else { return }
+                guard let self else { return }
+                self.isObserving = false
+                guard self.isStarted else { return }
                 self.registerMicHotkey()
                 self.applyTaps()
                 self.observeChanges()

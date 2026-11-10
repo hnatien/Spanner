@@ -6,7 +6,7 @@ import SwiftUI
 /// Windows-style window switcher: hold the modifier, tap Tab to move through
 /// every window (with previews), release to switch.
 @Observable
-final class SwitcherController {
+final class SwitcherController: FeatureModule {
     enum Status: Equatable {
         case disabled
         /// Accessibility is missing: windows can't be listed by title,
@@ -41,6 +41,9 @@ final class SwitcherController {
     @ObservationIgnored private var revealTask: Task<Void, Never>?
     @ObservationIgnored private var captureTask: Task<Void, Never>?
     @ObservationIgnored private var isStarted = false
+    /// A change is being waited for. Survives `stop`, so starting again
+    /// doesn't add a second wait beside it.
+    @ObservationIgnored private var isObserving = false
 
     private struct HotkeyConfig: Equatable {
         let trigger: SwitcherTrigger
@@ -79,6 +82,8 @@ final class SwitcherController {
     // MARK: - Configuration
 
     private func observeChanges() {
+        guard !isObserving else { return }
+        isObserving = true
         withObservationTracking {
             _ = permissions.accessibilityGranted
             _ = settings.isEnabled
@@ -86,7 +91,9 @@ final class SwitcherController {
             _ = settings.appWindowsEnabled
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.isStarted else { return }
+                guard let self else { return }
+                self.isObserving = false
+                guard self.isStarted else { return }
                 self.reconcile()
                 self.observeChanges()
             }

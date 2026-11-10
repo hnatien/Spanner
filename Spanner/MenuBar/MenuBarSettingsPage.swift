@@ -1,3 +1,4 @@
+import SpannerCore
 import SwiftUI
 
 /// Tiles of the menu bar panel that can be hidden, in panel order. Every
@@ -10,6 +11,18 @@ enum PanelTile: String, CaseIterable, Identifiable {
     /// `@AppStorage` key for showing the tile. Derived from the raw value,
     /// so renaming a case resets that tile to shown.
     var storageKey: String { "menuBar.shows.\(rawValue)" }
+
+    /// The feature the tile belongs to. The tile goes when the feature is
+    /// turned off.
+    var feature: Feature {
+        switch self {
+        case .battery, .headphones: .battery
+        case .system: .system
+        case .keepAwake: .keepAwake
+        case .switcher: .switcher
+        case .displays: .displays
+        }
+    }
 
     var title: String {
         switch self {
@@ -47,6 +60,8 @@ enum PanelTile: String, CaseIterable, Identifiable {
 
 /// Main-window page choosing which tiles the menu bar panel shows.
 struct MenuBarSettingsPage: View {
+    @Environment(FeatureRegistry.self) private var features
+
     var body: some View {
         Page {
             PageHeader(title: "Menu Bar",
@@ -54,8 +69,8 @@ struct MenuBarSettingsPage: View {
                        symbol: AppSection.menuBar.symbol, tint: FeatureTint.menuBar)
 
             SettingsGroup(title: "Show in the panel",
-                          footer: "A reminder also appears whenever Spanner is missing a permission it needs.") {
-                ForEach(PanelTile.allCases) { PanelTileRow(tile: $0) }
+                          footer: "Tiles of features that are turned off aren't listed. A reminder also appears whenever the window switcher is missing a permission it needs.") {
+                ForEach(PanelTile.allCases.filter { features.isEnabled($0.feature) }) { PanelTileRow(tile: $0) }
             }
         }
     }

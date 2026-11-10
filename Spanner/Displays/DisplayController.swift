@@ -26,7 +26,7 @@ struct ExternalDisplay: Identifiable, Equatable {
 /// DDC needs no permission. Taking over the media keys needs an active event
 /// tap, so it needs Accessibility.
 @Observable
-final class DisplayController {
+final class DisplayController: FeatureModule {
     enum BrightnessKeyTarget: String, CaseIterable, Identifiable {
         case pointer, allExternal
 
@@ -55,6 +55,9 @@ final class DisplayController {
     @ObservationIgnored private let hud = HUDPanel()
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
     @ObservationIgnored private var isStarted = false
+    /// A change is being waited for. Survives `stop`, so starting again
+    /// doesn't add a second wait beside it.
+    @ObservationIgnored private var isObserving = false
 
     private enum Key {
         static let mediaKeys = "displays.mediaKeysEnabled"
@@ -91,13 +94,17 @@ final class DisplayController {
     }
 
     private func observeChanges() {
+        guard !isObserving else { return }
+        isObserving = true
         withObservationTracking {
             _ = permissions.accessibilityGranted
             _ = mediaKeysEnabled
             _ = displays.count
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.isStarted else { return }
+                guard let self else { return }
+                self.isObserving = false
+                guard self.isStarted else { return }
                 self.reconcileKeyTap()
                 self.observeChanges()
             }

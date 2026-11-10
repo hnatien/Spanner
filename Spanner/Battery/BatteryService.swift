@@ -11,7 +11,7 @@ import SpannerCore
 /// registry for values that change continuously (watts, amps, temperature).
 /// The poll is fast only while battery UI is on screen.
 @Observable
-final class BatteryService {
+final class BatteryService: FeatureModule {
     private(set) var snapshot: BatterySnapshot?
     /// False on Macs without a battery; nil until the first read.
     private(set) var hasBattery: Bool?

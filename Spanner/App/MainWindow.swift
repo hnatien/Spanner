@@ -1,17 +1,21 @@
+import SpannerCore
 import SwiftUI
 
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
     @Environment(PermissionsManager.self) private var permissions
+    @Environment(FeatureRegistry.self) private var features
 
-    private static let featureSections: [AppSection] = [.battery, .system, .switcher, .snapping, .mouse, .sound, .displays, .keepAwake]
-    private static let appSections: [AppSection] = [.menuBar, .permissions, .general]
+    private static let appSections: [AppSection] = [.features, .menuBar, .permissions, .general]
 
     var body: some View {
         NavigationSplitView {
             List(selection: selection) {
-                Section("Features") {
-                    ForEach(Self.featureSections) { sidebarRow($0) }
+                // Features that are turned off have no page.
+                if !features.enabledFeatures.isEmpty {
+                    Section("Features") {
+                        ForEach(features.enabledFeatures.map(AppSection.init)) { sidebarRow($0) }
+                    }
                 }
                 Section("Spanner") {
                     ForEach(Self.appSections) { sidebarRow($0) }
@@ -51,6 +55,7 @@ struct MainWindow: View {
         case .sound: SoundPage()
         case .displays: DisplaysPage()
         case .keepAwake: KeepAwakePage()
+        case .features: FeaturesPage()
         case .menuBar: MenuBarSettingsPage()
         case .permissions: PermissionsPage()
         case .general: GeneralPage()

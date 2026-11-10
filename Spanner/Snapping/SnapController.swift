@@ -9,7 +9,7 @@ import SpannerCore
 /// Public Accessibility only: windows are moved with AXUIElement, and drags
 /// are watched with a listen-only event tap. Both need Accessibility.
 @Observable
-final class SnapController {
+final class SnapController: FeatureModule {
     enum Status: Equatable {
         case disabled, needsPermission, ready
     }
@@ -35,6 +35,9 @@ final class SnapController {
     @ObservationIgnored private var restoreFrames: [CGWindowID: CGRect] = [:]
     @ObservationIgnored private var drag: DragState?
     @ObservationIgnored private var isStarted = false
+    /// A change is being waited for. Survives `stop`, so starting again
+    /// doesn't add a second wait beside it.
+    @ObservationIgnored private var isObserving = false
 
     /// Tracks one left-button drag that might be moving a window.
     private struct DragState {
@@ -82,6 +85,8 @@ final class SnapController {
     // MARK: - Configuration
 
     private func observeChanges() {
+        guard !isObserving else { return }
+        isObserving = true
         withObservationTracking {
             _ = permissions.accessibilityGranted
             _ = settings.isEnabled
@@ -89,7 +94,9 @@ final class SnapController {
             _ = settings.activeShortcuts
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.isStarted else { return }
+                guard let self else { return }
+                self.isObserving = false
+                guard self.isStarted else { return }
                 self.reconcile()
                 self.observeChanges()
             }

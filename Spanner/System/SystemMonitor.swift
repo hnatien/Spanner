@@ -17,7 +17,7 @@ import SpannerCore
 /// doesn't touch the Memory card. Values are rounded to what's displayed
 /// before they're compared, so an idle Mac doesn't redraw anything.
 @Observable
-final class SystemMonitor {
+final class SystemMonitor: FeatureModule {
     // Processor, graphics and memory (the panel and the page).
     private(set) var cpu: CPULoad?
     private(set) var gpu: GPUUsage?
