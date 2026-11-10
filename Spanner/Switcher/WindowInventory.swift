@@ -90,12 +90,19 @@ final class WindowInventory {
         // Spanner's own windows are read from AppKit instead; Accessibility
         // calls into our own process would wait on the main thread.
         let targets = (pids ?? Self.regularApps().map(\.processIdentifier)).filter { $0 != Self.ownPID }
+        let hidden = Self.windowsOnHiddenSpaces(of: Set(targets))
         let previous = refreshTask
         refreshTask = Task { [weak self] in
             await previous?.value
+            // Read after the previous refresh has landed, so its elements
+            // for windows on hidden Spaces carry over.
+            guard let known = self?.axCache else { return }
             let result = await Task.detached(priority: .userInitiated) {
                 var windows: [pid_t: [CGWindowID: AXWindowInfo]] = [:]
-                for pid in targets { windows[pid] = AXReader.windows(of: pid) }
+                for pid in targets {
+                    windows[pid] = AXReader.windows(of: pid, onHiddenSpaces: hidden[pid] ?? [],
+                                                    known: known[pid] ?? [:])
+                }
                 return windows
             }.value
             guard let self, !Task.isCancelled else { return }
@@ -157,8 +164,10 @@ final class WindowInventory {
     /// cooperative activation.
     ///
     /// Falls back to activating the whole app if the window server call
-    /// fails. Windows on another Space have no Accessibility element; the
-    /// window server call still moves to the window's Space.
+    /// fails. Moving to a window on another Space needs the raise, which is
+    /// why `AXReader` keeps or searches for the elements of those windows;
+    /// the window server call alone leaves the user on the current Space
+    /// when the app also has a window there.
     func focus(_ window: SwitcherWindow) {
         if window.pid == Self.ownPID {
             focusOwn(window.id)
@@ -267,6 +276,23 @@ final class WindowInventory {
         CGSCopySpacesForWindows(CGSMainConnectionID(), 7, [id] as CFArray)?.takeRetainedValue() as? [Int]
     }
 
+    /// Layer-0 windows of `pids` that are on a Space no display is showing,
+    /// by app.
+    private static func windowsOnHiddenSpaces(of pids: Set<pid_t>) -> [pid_t: Set<CGWindowID>] {
+        let visibleSpaces = Set(displaySpaces().map(\.current))
+        var result: [pid_t: Set<CGWindowID>] = [:]
+        for info in windowInfo([.optionAll, .excludeDesktopElements]) {
+            guard let pid = info[kCGWindowOwnerPID as String] as? pid_t, pids.contains(pid),
+                  info[kCGWindowLayer as String] as? Int == 0,
+                  info[kCGWindowIsOnscreen as String] as? Bool != true,
+                  let id = info[kCGWindowNumber as String] as? CGWindowID,
+                  let spaces = spaces(of: id),
+                  WindowPlacement.isOnHiddenSpace(spaces: spaces, visibleSpaces: visibleSpaces) else { continue }
+            result[pid, default: []].insert(id)
+        }
+        return result
+    }
+
     /// Each display's current Space and desktops. Full-screen Spaces have
     /// type 4; ordinary desktops type 0.
     private static func displaySpaces() -> [DisplaySpaces] {
@@ -297,22 +323,69 @@ private enum AXAttribute {
 
 /// Reads an app's windows through Accessibility. Runs off the main thread.
 private enum AXReader {
-    nonisolated static func windows(of pid: pid_t) -> [CGWindowID: AXWindowInfo] {
+    /// - Parameters:
+    ///   - hidden: the app's windows on Spaces not being shown. The app's
+    ///     window list leaves these out, so their elements are taken from
+    ///     `known` while still valid, and searched for otherwise.
+    ///   - known: what the last read found for this app.
+    nonisolated static func windows(of pid: pid_t, onHiddenSpaces hidden: Set<CGWindowID>,
+                                    known: [CGWindowID: AXWindowInfo]) -> [CGWindowID: AXWindowInfo] {
         let app = AXUIElementCreateApplication(pid)
         // Unresponsive apps would otherwise block for the 6 s default.
-        AXUIElementSetMessagingTimeout(app, 0.25)
+        AXUIElementSetMessagingTimeout(app, timeout)
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(app, "AXWindows" as CFString, &value) == .success,
               let elements = value as? [AXUIElement] else { return [:] }
         var result: [CGWindowID: AXWindowInfo] = [:]
         for element in elements {
-            var id: CGWindowID = 0
-            guard _AXUIElementGetWindow(element, &id) == .success, id != 0 else { continue }
-            result[id] = AXWindowInfo(element: element,
-                                      title: string(element, "AXTitle") ?? "",
-                                      isMinimized: bool(element, "AXMinimized") ?? false)
+            guard let window = read(element) else { continue }
+            result[window.id] = window.info
+        }
+        var missing = hidden.subtracting(result.keys)
+        for id in missing {
+            // Re-read rather than copy: the title or minimized state may
+            // have changed, and a window ID can outlive its element.
+            guard let element = known[id]?.element, let window = read(element), window.id == id else { continue }
+            result[id] = window.info
+            missing.remove(id)
+        }
+        if !missing.isEmpty {
+            result.merge(search(pid, for: missing)) { current, _ in current }
         }
         return result
+    }
+
+    private nonisolated static let timeout: Float = 0.25
+
+    nonisolated private static func read(_ element: AXUIElement) -> (id: CGWindowID, info: AXWindowInfo)? {
+        var id: CGWindowID = 0
+        guard _AXUIElementGetWindow(element, &id) == .success, id != 0 else { return nil }
+        return (id, AXWindowInfo(element: element, title: string(element, "AXTitle") ?? "",
+                                 isMinimized: bool(element, "AXMinimized") ?? false))
+    }
+
+    /// Finds the elements of `wanted` windows by trying element IDs in turn,
+    /// as AltTab does: Accessibility offers no way to list an app's windows
+    /// on other Spaces. An element token is 20 bytes: pid, zero, the "coco"
+    /// tag, then the 8-byte element ID. Gives up after a quarter second, so
+    /// a slow app can't hold up the rest of the read.
+    nonisolated private static func search(_ pid: pid_t, for wanted: Set<CGWindowID>) -> [CGWindowID: AXWindowInfo] {
+        var token = Data(count: 20)
+        token.replaceSubrange(0..<4, with: withUnsafeBytes(of: pid) { Data($0) })
+        token.replaceSubrange(8..<12, with: withUnsafeBytes(of: Int32(0x636f_636f)) { Data($0) })
+        var found: [CGWindowID: AXWindowInfo] = [:]
+        let deadline = ContinuousClock.now + .milliseconds(250)
+        for elementID: UInt64 in 0..<1000 where found.count < wanted.count {
+            token.replaceSubrange(12..<20, with: withUnsafeBytes(of: elementID) { Data($0) })
+            if let element = _AXUIElementCreateWithRemoteToken(token as CFData)?.takeRetainedValue() {
+                AXUIElementSetMessagingTimeout(element, timeout)
+                if string(element, "AXRole") == "AXWindow", let window = read(element), wanted.contains(window.id) {
+                    found[window.id] = window.info
+                }
+            }
+            if ContinuousClock.now > deadline { break }
+        }
+        return found
     }
 
     nonisolated private static func string(_ element: AXUIElement, _ attribute: String) -> String? {

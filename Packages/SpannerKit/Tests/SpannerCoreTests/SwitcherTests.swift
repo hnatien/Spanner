@@ -171,6 +171,17 @@ struct WindowPlacementTests {
                                      coveredDesktops: [])
         #expect(reads == 0)
     }
+
+    @Test func windowOnlyOnSpacesNotShownIsOnAHiddenSpace() {
+        #expect(WindowPlacement.isOnHiddenSpace(spaces: [2], visibleSpaces: [1]))
+        #expect(WindowPlacement.isOnHiddenSpace(spaces: [2, 3], visibleSpaces: [1, 4]))
+    }
+
+    @Test func windowOnAShownSpaceOrNoSpaceIsNotOnAHiddenSpace() {
+        #expect(!WindowPlacement.isOnHiddenSpace(spaces: [1], visibleSpaces: [1]))
+        #expect(!WindowPlacement.isOnHiddenSpace(spaces: [1, 2], visibleSpaces: [1]))
+        #expect(!WindowPlacement.isOnHiddenSpace(spaces: [], visibleSpaces: [1]))
+    }
 }
 
 @Suite("Desktop under full screen")

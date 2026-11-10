@@ -16,6 +16,11 @@ nonisolated func CGSIsSymbolicHotKeyEnabled(_ hotKey: Int32) -> Bool
 @_silgen_name("_AXUIElementGetWindow")
 nonisolated func _AXUIElementGetWindow(_ element: AXUIElement, _ windowID: UnsafeMutablePointer<CGWindowID>) -> AXError
 
+/// Builds an Accessibility element from its raw token, which reaches windows
+/// the app's own window list leaves out. See `AXReader.search`.
+@_silgen_name("_AXUIElementCreateWithRemoteToken")
+nonisolated func _AXUIElementCreateWithRemoteToken(_ token: CFData) -> Unmanaged<AXUIElement>?
+
 @_silgen_name("CGSMainConnectionID")
 nonisolated func CGSMainConnectionID() -> Int32
 

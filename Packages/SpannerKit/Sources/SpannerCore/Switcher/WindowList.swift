@@ -70,6 +70,13 @@ public enum WindowPlacement {
         guard let spaces = spaces() else { return (false, false) }
         return (spaces.isEmpty || !visibleSpaces.isDisjoint(with: spaces), false)
     }
+
+    /// True for a window on some Space, none of which a display is showing.
+    /// Its app's Accessibility window list leaves such a window out, so its
+    /// element has to be kept from earlier or searched for.
+    public static func isOnHiddenSpace(spaces: [Int], visibleSpaces: Set<Int>) -> Bool {
+        !spaces.isEmpty && visibleSpaces.isDisjoint(with: spaces)
+    }
 }
 
 public struct WindowListOptions: Equatable, Sendable {
