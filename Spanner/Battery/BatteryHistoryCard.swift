@@ -42,7 +42,7 @@ struct BatteryHistoryCard: View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 HStack {
-                    CardTitle(title: "History", symbol: "chart.xyaxis.line")
+                    CardTitle(title: "History")
                     Spacer()
                     Picker("Range", selection: $range) {
                         ForEach(Range.allCases) { Text($0.rawValue).tag($0) }

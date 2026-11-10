@@ -4,7 +4,7 @@ import SwiftUI
 /// Tiles of the menu bar panel that can be hidden, in panel order. Every
 /// tile is shown until it's turned off.
 enum PanelTile: String, CaseIterable, Identifiable {
-    case battery, system, headphones, keepAwake, switcher, displays
+    case battery, system, headphones
 
     var id: Self { self }
 
@@ -18,9 +18,6 @@ enum PanelTile: String, CaseIterable, Identifiable {
         switch self {
         case .battery, .headphones: .battery
         case .system: .system
-        case .keepAwake: .keepAwake
-        case .switcher: .switcher
-        case .displays: .displays
         }
     }
 
@@ -29,9 +26,6 @@ enum PanelTile: String, CaseIterable, Identifiable {
         case .battery: "Battery"
         case .system: "System"
         case .headphones: "Headphones"
-        case .keepAwake: "Keep Awake"
-        case .switcher: "Window Switcher"
-        case .displays: "Display Brightness"
         }
     }
 
@@ -40,9 +34,6 @@ enum PanelTile: String, CaseIterable, Identifiable {
         case .battery: AppSection.battery.symbol
         case .system: AppSection.system.symbol
         case .headphones: "airpods.pro"
-        case .keepAwake: AppSection.keepAwake.symbol
-        case .switcher: AppSection.switcher.symbol
-        case .displays: AppSection.displays.symbol
         }
     }
 
@@ -51,9 +42,6 @@ enum PanelTile: String, CaseIterable, Identifiable {
         case .battery: FeatureTint.battery
         case .system: FeatureTint.system
         case .headphones: FeatureTint.switcher
-        case .keepAwake: FeatureTint.keepAwake
-        case .switcher: FeatureTint.switcher
-        case .displays: FeatureTint.displays
         }
     }
 }
@@ -111,12 +99,6 @@ private struct PanelTileRow: View {
             permissions.isGranted(.bluetooth)
                 ? "Battery of connected AirPods and headphones, while they're connected."
                 : "Needs Bluetooth permission, which you can grant in Permissions."
-        case .keepAwake:
-            "Turn Keep Awake on or off and pick a duration."
-        case .switcher:
-            "Turn the window switcher on or off."
-        case .displays:
-            "Brightness sliders, when a connected monitor supports brightness control."
         }
     }
 }

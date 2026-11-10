@@ -352,6 +352,8 @@ struct BatteryFormatTests {
         #expect(BatteryFormat.celsius(35.62) == "35.6 °C")
         #expect(BatteryFormat.milliampHours(4375) == "4,375 mAh")
         #expect(BatteryFormat.milliampHours(980) == "980 mAh")
+        #expect(BatteryFormat.grouped(1000) == "1,000")
+        #expect(BatteryFormat.grouped(69) == "69")
     }
 
     @Test func roughDurationRoundsToAnHonestStep() {

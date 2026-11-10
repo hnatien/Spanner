@@ -110,26 +110,3 @@ private struct LevelSlider: View {
         }
     }
 }
-
-/// Brightness sliders for the menu bar panel, one per controllable monitor.
-struct DisplaysMenuSection: View {
-    @Environment(DisplayController.self) private var displays
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            ForEach(displays.displays.filter(\.hasDDC)) { display in
-                HStack(spacing: Spacing.m) {
-                    SymbolTile(symbol: "sun.max.fill", tint: FeatureTint.displays, size: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(display.name).font(.callout.weight(.medium)).lineLimit(1)
-                        Slider(value: Binding(get: { display.brightness ?? 0.5 },
-                                              set: { displays.setBrightness($0, for: display.id) }),
-                               in: 0...1) { Text("\(display.name) brightness") }
-                            .labelsHidden()
-                            .controlSize(.small)
-                    }
-                }
-            }
-        }
-    }
-}

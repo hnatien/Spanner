@@ -29,22 +29,15 @@ struct MenuBarPanel: View {
     @Environment(FeatureRegistry.self) private var features
     @Environment(BatteryService.self) private var battery
     @Environment(HeadphoneMonitor.self) private var headphones
-    @Environment(DisplayController.self) private var displays
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PanelTile.battery.storageKey) private var batteryTileOn = true
     @AppStorage(PanelTile.system.storageKey) private var systemTileOn = true
     @AppStorage(PanelTile.headphones.storageKey) private var headphonesTileOn = true
-    @AppStorage(PanelTile.keepAwake.storageKey) private var keepAwakeTileOn = true
-    @AppStorage(PanelTile.switcher.storageKey) private var switcherTileOn = true
-    @AppStorage(PanelTile.displays.storageKey) private var displaysTileOn = true
     private var showsBattery: Bool { shows(.battery, batteryTileOn) }
     private var showsSystem: Bool { shows(.system, systemTileOn) }
     private var showsHeadphones: Bool { shows(.headphones, headphonesTileOn) }
-    private var showsKeepAwake: Bool { shows(.keepAwake, keepAwakeTileOn) }
-    private var showsSwitcher: Bool { shows(.switcher, switcherTileOn) }
-    private var showsDisplays: Bool { shows(.displays, displaysTileOn) }
     /// The content's natural height, animated whenever it changes so the
     /// window resizes in step with the sections moving inside it.
     @State private var height: CGFloat?
@@ -77,28 +70,6 @@ struct MenuBarPanel: View {
                 ForEach(shownHeadphones) { headphone in
                     HeadphonesMenuTile(headphone: headphone)
                         .transition(reduceMotion ? .opacity : .headphoneTile)
-                }
-            }
-
-            if showsKeepAwake || showsSwitcher {
-                PanelSection {
-                    VStack(spacing: Spacing.m) {
-                        if showsKeepAwake {
-                            KeepAwakeMenuRow()
-                        }
-                        if showsKeepAwake && showsSwitcher {
-                            Divider()
-                        }
-                        if showsSwitcher {
-                            SwitcherMenuRow()
-                        }
-                    }
-                }
-            }
-
-            if showsDisplays && displays.displays.contains(where: \.hasDDC) {
-                PanelSection {
-                    DisplaysMenuSection()
                 }
             }
 

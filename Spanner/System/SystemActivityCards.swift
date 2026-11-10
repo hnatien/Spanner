@@ -16,7 +16,7 @@ struct NetworkCard: View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HStack(alignment: .firstTextBaseline) {
-                    CardTitle(title: "Network", symbol: "network")
+                    CardTitle(title: "Network")
                     Spacer()
                     if case .connected(let interface) = link {
                         let label = [interface.displayName ?? interface.name, interface.ipv4].compactMap { $0 }
@@ -37,11 +37,11 @@ struct NetworkCard: View {
                 } else {
                     TransferTiles(status: status,
                                   inbound: .init(rateTitle: "Download", totalTitle: "Received",
-                                                 symbol: "arrow.down", tint: SystemStyle.received),
+                                                 symbol: "arrow.down", tint: SystemStyle.inbound),
                                   outbound: .init(rateTitle: "Upload", totalTitle: "Sent",
-                                                  symbol: "arrow.up", tint: SystemStyle.sent))
-                    RateChart(inbound: .init(title: "Download", history: system.downloadHistory, tint: SystemStyle.received),
-                              outbound: .init(title: "Upload", history: system.uploadHistory, tint: SystemStyle.sent))
+                                                  symbol: "arrow.up", tint: SystemStyle.outbound))
+                    RateChart(inbound: .init(title: "Download", history: system.downloadHistory, tint: SystemStyle.inbound),
+                              outbound: .init(title: "Upload", history: system.uploadHistory, tint: SystemStyle.outbound))
                 }
             }
         }
@@ -84,14 +84,14 @@ struct DiskCard: View {
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                CardTitle(title: "Disk", symbol: "internaldrive")
+                CardTitle(title: "Disk")
                 TransferTiles(status: system.disk,
                               inbound: .init(rateTitle: "Read", totalTitle: "Read", symbol: "arrow.down.doc",
-                                             tint: SystemStyle.read),
+                                             tint: SystemStyle.inbound),
                               outbound: .init(rateTitle: "Write", totalTitle: "Written", symbol: "arrow.up.doc",
-                                              tint: SystemStyle.written))
-                RateChart(inbound: .init(title: "Read", history: system.diskReadHistory, tint: SystemStyle.read),
-                          outbound: .init(title: "Write", history: system.diskWriteHistory, tint: SystemStyle.written))
+                                              tint: SystemStyle.outbound))
+                RateChart(inbound: .init(title: "Read", history: system.diskReadHistory, tint: SystemStyle.inbound),
+                          outbound: .init(title: "Write", history: system.diskWriteHistory, tint: SystemStyle.outbound))
                 VolumeList(volumes: system.volumes)
             }
         }
@@ -166,7 +166,7 @@ struct TopProcessesCard: View {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: Spacing.xxs) {
-                        CardTitle(title: "Top processes", symbol: "list.number")
+                        CardTitle(title: "Top processes")
                         Text("Your apps and processes. macOS's own background processes aren't included.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -284,34 +284,23 @@ struct SystemInfoCard: View {
 
     var body: some View {
         let hardware = system.hardware
-        Card {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                CardTitle(title: "This Mac", symbol: "info.circle")
-                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.s) {
-                    row("Model", hardware.modelName)
-                    row("Chip", hardware.cpuName)
-                    row("Cores", CoreKind.summary(hardware.coreKinds)
-                        ?? "\(ProcessInfo.processInfo.activeProcessorCount) cores")
-                    row("Memory", "\(Int((Double(hardware.physicalMemory) / 1_073_741_824).rounded())) GB")
-                    row("Graphics", hardware.gpuName)
-                    row("Software", hardware.systemVersion)
-                }
-            }
+        FactCard(title: "This Mac") {
+            row("Model", hardware.modelName)
+            row("Chip", hardware.cpuName)
+            row("Cores", CoreKind.summary(hardware.coreKinds)
+                ?? "\(ProcessInfo.processInfo.activeProcessorCount) cores")
+            row("Memory", "\(Int((Double(hardware.physicalMemory) / 1_073_741_824).rounded())) GB")
+            row("Graphics", hardware.gpuName)
+            row("Software", hardware.systemVersion)
         }
     }
 
     @ViewBuilder
     private func row(_ title: String, _ value: String?) -> some View {
         if let value {
-            GridRow {
-                Text(title)
-                    .foregroundStyle(.secondary)
-                    .gridColumnAlignment(.trailing)
-                Text(value)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
+            LabeledContent(title) {
+                Text(value).textSelection(.enabled)
             }
-            .accessibilityElement(children: .combine)
         }
     }
 }

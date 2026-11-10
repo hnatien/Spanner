@@ -93,6 +93,56 @@ struct Card<Content: View>: View {
     }
 }
 
+/// Heading at the top of a dashboard card.
+struct CardTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.headline)
+    }
+}
+
+/// Label on the left, reading on the right, like a row in System Settings.
+struct FactStyle: LabeledContentStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.l) {
+            configuration.label
+            Spacer(minLength: 0)
+            configuration.content
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+/// A titled card of fact rows separated by hairlines. Rows whose reading this
+/// Mac doesn't report are simply left out by the caller.
+struct FactCard<Rows: View>: View {
+    let title: String
+    @ViewBuilder var rows: Rows
+
+    var body: some View {
+        Card {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                CardTitle(title: title)
+                VStack(spacing: 0) {
+                    Group(subviews: rows) { subviews in
+                        ForEach(Array(subviews.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 {
+                                Divider()
+                            }
+                            row.padding(.vertical, Spacing.s)
+                        }
+                    }
+                }
+                .labeledContentStyle(FactStyle())
+            }
+        }
+    }
+}
+
 /// A titled group of settings rows separated by hairlines, matching the
 /// grouped-form look of System Settings while allowing custom rows.
 struct SettingsGroup<Content: View>: View {

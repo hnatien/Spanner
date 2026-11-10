@@ -129,37 +129,3 @@ private struct ShortcutGroup: View {
         return nil
     }
 }
-
-/// Compact switcher status for the menu bar panel.
-struct SwitcherMenuRow: View {
-    @Environment(SwitcherController.self) private var switcher
-
-    var body: some View {
-        @Bindable var settings = switcher.settings
-        HStack(spacing: Spacing.m) {
-            SymbolTile(symbol: "rectangle.on.rectangle",
-                       tint: switcher.status == .ready ? FeatureTint.switcher : .gray, size: 28)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Window Switcher").font(.callout.weight(.medium))
-                Text(statusText)
-                    .font(.caption)
-                    .foregroundStyle(switcher.status == .needsPermission ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-            }
-            Spacer(minLength: Spacing.s)
-            Toggle("Window Switcher", isOn: $settings.isEnabled)
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .labelsHidden()
-        }
-        .animation(.spanner, value: switcher.status)
-    }
-
-    private var statusText: String {
-        switch switcher.status {
-        case .disabled: "Off"
-        case .needsPermission: "Needs permission"
-        case .ready:
-            "\(switcher.triggerKeycaps.joined()) · " + (switcher.previewsAvailable ? "Ready" : "Ready, no previews")
-        }
-    }
-}

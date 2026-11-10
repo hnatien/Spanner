@@ -21,11 +21,16 @@ public enum BatteryFormat {
         return String(format: "%.2f A", value)
     }
 
-    /// "4,375 mAh". Grouped with a comma whatever the region, because the
-    /// other units here always use "." as the decimal point; a locale "."
-    /// separator would make 2.975 mAh read as two and a bit.
+    /// "4,375". Grouped with a comma whatever the region, because the other
+    /// units here always use "." as the decimal point; a locale "." separator
+    /// would make 2.975 mAh read as two and a bit.
+    public static func grouped(_ value: Int) -> String {
+        value.formatted(.number.grouping(.automatic).locale(Locale(identifier: "en_US")))
+    }
+
+    /// "4,375 mAh".
     public static func milliampHours(_ value: Int) -> String {
-        "\(value.formatted(.number.grouping(.automatic).locale(Locale(identifier: "en_US")))) mAh"
+        "\(grouped(value)) mAh"
     }
 
     /// A time estimate rounded to what it can really promise: nearest

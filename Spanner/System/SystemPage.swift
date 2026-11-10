@@ -14,12 +14,6 @@ struct SystemPage: View {
 
     var body: some View {
         Page {
-            PageHeader(title: "System",
-                       subtitle: "Processor, memory, network and disk activity, updated live while this page is open.",
-                       symbol: AppSection.system.symbol, tint: FeatureTint.system) {
-                ThermalBadge()
-            }
-
             OverviewCard()
             ProcessorCard()
             if system.hardware.gpuName != nil {
@@ -39,15 +33,18 @@ struct SystemPage: View {
     }
 }
 
-/// macOS's thermal state. Pushed by the system (the monitor observes its
-/// notification), so it costs nothing until it changes.
-private struct ThermalBadge: View {
+/// macOS's thermal state in words, coloured once it leaves nominal. Pushed
+/// by the system (the monitor observes its notification), so it costs
+/// nothing until it changes.
+private struct ThermalLine: View {
     @Environment(SystemMonitor.self) private var system
 
     var body: some View {
         if let state = system.thermalState {
-            StatusPill(text: SystemStyle.label(for: state), symbol: SystemStyle.symbol(for: state),
-                       tint: SystemStyle.tint(for: state))
+            Divider()
+            Label(SystemStyle.label(for: state), systemImage: SystemStyle.symbol(for: state))
+                .font(.callout)
+                .foregroundStyle(SystemStyle.tint(for: state))
                 .help("How hard macOS is working to keep the Mac cool. Serious and Critical slow the chip down.")
                 .animation(.spanner, value: state)
         }
@@ -61,20 +58,28 @@ private struct OverviewCard: View {
 
     var body: some View {
         let snapshot = system.snapshot
-        Card(padding: Spacing.xl) {
-            HStack(alignment: .top, spacing: Spacing.l) {
-                gauge(title: "Processor", fraction: snapshot?.cpu?.total,
-                      tint: SystemStyle.tint(load: snapshot?.cpu?.total ?? 0, base: SystemStyle.cpu),
-                      detail: system.hardware.cpuName ?? "CPU")
-                if let gpuName = system.hardware.gpuName {
-                    gauge(title: "Graphics", fraction: snapshot?.gpu?.utilization,
-                          tint: SystemStyle.tint(load: snapshot?.gpu?.utilization ?? 0, base: SystemStyle.gpu),
-                          detail: gpuName)
-                }
-                gauge(title: "Memory", fraction: snapshot?.memory?.fraction,
-                      tint: SystemStyle.tint(for: snapshot?.memory?.pressure ?? .normal),
-                      detail: snapshot?.memory.map { "\(SpannerFormat.memory($0.used)) of \(SpannerFormat.memory($0.total))" } ?? " ")
+        Card {
+            VStack(alignment: .leading, spacing: Spacing.l) {
+                gauges(snapshot)
+                    .padding(.top, Spacing.s)
+                ThermalLine()
             }
+        }
+    }
+
+    private func gauges(_ snapshot: SystemSnapshot?) -> some View {
+        HStack(alignment: .top, spacing: Spacing.l) {
+            gauge(title: "Processor", fraction: snapshot?.cpu?.total,
+                  tint: SystemStyle.tint(load: snapshot?.cpu?.total ?? 0, base: SystemStyle.cpu),
+                  detail: system.hardware.cpuName ?? "CPU")
+            if let gpuName = system.hardware.gpuName {
+                gauge(title: "Graphics", fraction: snapshot?.gpu?.utilization,
+                      tint: SystemStyle.tint(load: snapshot?.gpu?.utilization ?? 0, base: SystemStyle.gpu),
+                      detail: gpuName)
+            }
+            gauge(title: "Memory", fraction: snapshot?.memory?.fraction,
+                  tint: SystemStyle.tint(for: snapshot?.memory?.pressure ?? .normal),
+                  detail: snapshot?.memory.map { "\(SpannerFormat.memory($0.used)) of \(SpannerFormat.memory($0.total))" } ?? " ")
         }
     }
 
@@ -106,15 +111,7 @@ private struct ProcessorCard: View {
         let cpu = system.cpu
         Card {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                HStack(alignment: .firstTextBaseline) {
-                    CardTitle(title: "Processor", symbol: "cpu")
-                    Spacer()
-                    if let summary = CoreKind.summary(system.hardware.coreKinds) {
-                        Text(summary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                CardTitle(title: "Processor")
                 ProcessorStats(user: cpu?.user, system: cpu?.system, load: system.loadAverage, uptime: system.uptime)
                 LoadChart(history: system.cpuHistory, tint: SystemStyle.cpu)
                 if let cores = cpu?.cores, !cores.isEmpty {
@@ -135,9 +132,9 @@ private struct ProcessorStats: View {
     var body: some View {
         TileRow {
             StatTile(title: "User", value: user.map(SpannerFormat.percent) ?? "–",
-                     detail: "Apps' own code", symbol: "person.fill", tint: SystemStyle.cpu)
+                     detail: "Apps' own code")
             StatTile(title: "System", value: system.map(SpannerFormat.percent) ?? "–",
-                     detail: "macOS on their behalf", symbol: "gearshape.fill", tint: .orange)
+                     detail: "macOS on their behalf")
             StatTile(title: "Load average", value: load?.formatted ?? "–", detail: "1, 5 and 15 minutes")
             StatTile(title: "Uptime", value: uptime.map(SpannerFormat.uptime) ?? "–", detail: "Since startup")
         }
@@ -218,7 +215,7 @@ private struct GraphicsCard: View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HStack(alignment: .firstTextBaseline) {
-                    CardTitle(title: "Graphics", symbol: "square.3.layers.3d")
+                    CardTitle(title: "Graphics")
                     Spacer()
                     if let memory = system.gpu?.memoryInUse {
                         Text("\(SpannerFormat.memory(memory)) in use")
@@ -250,12 +247,13 @@ private struct MemoryCard: View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HStack(alignment: .firstTextBaseline) {
-                    CardTitle(title: "Memory", symbol: "memorychip")
+                    CardTitle(title: "Memory")
                     Spacer()
                     if let pressure = memory?.pressure {
-                        StatusPill(text: "Pressure: \(SystemStyle.label(for: pressure))",
-                                   symbol: pressure == .normal ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
-                                   tint: pressure == .normal ? .green : SystemStyle.tint(for: pressure))
+                        // Coloured only once pressure is worth noticing.
+                        Text("Pressure: \(SystemStyle.label(for: pressure))")
+                            .font(.caption)
+                            .foregroundStyle(pressure == .normal ? .secondary : SystemStyle.tint(for: pressure))
                     }
                 }
                 if let memory {

@@ -8,10 +8,10 @@ enum SystemStyle {
     static let cpu = Color.blue
     static let gpu = Color.purple
     static let memory = Color.teal
-    static let received = Color.cyan
-    static let sent = Color.indigo
-    static let read = Color.green
-    static let written = Color.pink
+    /// Download and read, upload and write: the Network and Disk cards
+    /// share one pair so "in" and "out" look the same on both.
+    static let inbound = Color.cyan
+    static let outbound = Color.indigo
     static let disk = Color.gray
 
     static func tint(load: Double, base: Color) -> Color {
@@ -50,7 +50,7 @@ enum SystemStyle {
 
     static func tint(for state: ProcessInfo.ThermalState) -> Color {
         switch state {
-        case .nominal: .green
+        case .nominal: .secondary
         case .fair: .yellow
         case .serious: .orange
         case .critical: .red

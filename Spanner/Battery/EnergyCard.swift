@@ -15,7 +15,7 @@ struct EnergyCard: View {
         Card {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 HStack {
-                    CardTitle(title: "Energy by app", symbol: "bolt.fill")
+                    CardTitle(title: "Energy by app")
                     Spacer()
                     if let last = energy.lastSample {
                         Text("Updated \(last.formatted(date: .omitted, time: .standard))")
