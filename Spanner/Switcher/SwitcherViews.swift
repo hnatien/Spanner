@@ -10,7 +10,7 @@ struct SwitcherSettingsPage: View {
         @Bindable var settings = switcher.settings
         Page {
             PageHeader(title: "Window Switcher",
-                       subtitle: "Hold a modifier and tap Tab to see every window, on every screen and Space, with live previews.",
+                       subtitle: "Switch between windows, not just apps, across every screen and Space.",
                        symbol: AppSection.switcher.symbol, tint: FeatureTint.switcher) {
                 Toggle("Enable window switcher", isOn: $settings.isEnabled)
                     .toggleStyle(.switch)
@@ -29,40 +29,44 @@ struct SwitcherSettingsPage: View {
                 }
             }
 
-            ShortcutGroup(settings: settings, shortcutUnavailable: switcher.shortcutUnavailable)
+            // The settings stay visible while the switcher is off, but can't
+            // be changed until it's back on.
+            Group {
+                ShortcutGroup(settings: settings, shortcutUnavailable: switcher.shortcutUnavailable)
 
-            SettingsGroup(title: "Windows") {
-                SettingsRow(title: "Include minimized windows", symbol: "dock.arrow.down.rectangle", tint: .orange) {
-                    Toggle("Include minimized windows", isOn: $settings.includeMinimized)
-                        .toggleStyle(.switch)
-                        .labelsHidden()
+                SettingsGroup(title: "Show in the switcher") {
+                    SettingsRow(title: "Minimized windows") {
+                        Toggle("Show minimized windows", isOn: $settings.includeMinimized)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
+                    SettingsRow(title: "Windows on other Spaces",
+                                subtitle: "Including windows of hidden apps.") {
+                        Toggle("Show windows on other Spaces", isOn: $settings.includeOtherSpaces)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
                 }
-                SettingsRow(title: "Include windows on other Spaces",
-                            subtitle: "Also lists windows of hidden apps.",
-                            symbol: "square.stack.3d.up.fill", tint: .teal) {
-                    Toggle("Include windows on other Spaces", isOn: $settings.includeOtherSpaces)
-                        .toggleStyle(.switch)
+
+                SettingsGroup(title: "Appearance") {
+                    SettingsRow(title: "Preview size") {
+                        Picker("Preview size", selection: $settings.thumbnailSize) {
+                            ForEach(ThumbnailSize.allCases) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
                         .labelsHidden()
+                        .fixedSize()
+                    }
+                    SettingsRow(title: "Show switcher on") {
+                        Picker("Show switcher on", selection: $settings.overlayScreen) {
+                            ForEach(OverlayScreen.allCases) { Text($0.title).tag($0) }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                    }
                 }
             }
-
-            SettingsGroup(title: "Appearance") {
-                SettingsRow(title: "Preview size", symbol: "rectangle.grid.2x2.fill", tint: .purple) {
-                    Picker("Preview size", selection: $settings.thumbnailSize) {
-                        ForEach(ThumbnailSize.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
-                }
-                SettingsRow(title: "Show switcher on", symbol: "display.2", tint: .blue) {
-                    Picker("Show switcher on", selection: $settings.overlayScreen) {
-                        ForEach(OverlayScreen.allCases) { Text($0.title).tag($0) }
-                    }
-                    .labelsHidden()
-                    .fixedSize()
-                }
-            }
+            .disabled(!settings.isEnabled)
         }
     }
 }
@@ -93,21 +97,15 @@ private struct ShortcutGroup: View {
     var body: some View {
         SettingsGroup(title: "Shortcut", footer: footer) {
             SettingsRow(title: "All windows",
-                        subtitle: "Hold the modifier, tap Tab to move, release to switch. Arrow keys and Esc work while it's open.",
-                        symbol: "rectangle.on.rectangle", tint: FeatureTint.switcher) {
-                HStack(spacing: Spacing.m) {
-                    Keycaps(keys: settings.trigger.keycaps)
-                        .animation(.spanner, value: settings.trigger)
-                    Picker("Shortcut", selection: $settings.trigger) {
-                        ForEach(SwitcherTrigger.allCases) { Text($0.title).tag($0) }
-                    }
-                    .labelsHidden()
-                    .fixedSize()
+                        subtitle: "Tap Tab to move along and release to switch. Arrow keys and Esc work too.") {
+                Picker("Shortcut", selection: $settings.trigger) {
+                    ForEach(SwitcherTrigger.allCases) { Text($0.title).tag($0) }
                 }
+                .labelsHidden()
+                .fixedSize()
             }
             SettingsRow(title: "Windows of the current app",
-                        subtitle: "Cycle only the frontmost app's windows.",
-                        symbol: "macwindow.on.rectangle", tint: .indigo) {
+                        subtitle: "Cycles only through the frontmost app's windows.") {
                 HStack(spacing: Spacing.m) {
                     Keycaps(keys: settings.trigger.appWindowsKeycaps)
                         .opacity(settings.appWindowsEnabled ? 1 : 0.4)
@@ -124,7 +122,7 @@ private struct ShortcutGroup: View {
             return "Another app is already using this shortcut. Choose a different one, or quit the other app."
         }
         if settings.trigger.replacesSystemSwitcher {
-            return "Command-Tab replaces the macOS app switcher while Spanner runs. Spanner gives it back when you quit or change this setting, and on its next launch if it ever quits unexpectedly."
+            return "Command-Tab opens Spanner instead of the macOS app switcher. macOS gets it back when you quit Spanner or pick another shortcut."
         }
         return nil
     }

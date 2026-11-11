@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import CoreBluetooth
 import Observation
+import SpannerCore
 
 /// A privacy permission a Spanner module can need.
 enum Permission: String, CaseIterable, Identifiable {
@@ -34,17 +35,27 @@ enum Permission: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Why Spanner asks, phrased for the person granting it.
+    /// What the grant makes possible, phrased for the person granting it.
     var rationale: String {
         switch self {
         case .accessibility:
-            "Lets the switcher see and raise your windows, window snapping move them, mouse fixes adjust scrolling and buttons, and media keys reach external displays."
+            "See, move and raise your windows, and respond to mouse buttons and media keys."
         case .screenRecording:
-            "Lets the switcher show live previews and window titles. Spanner only captures small thumbnails and never records or uploads your screen."
+            "Show window previews and titles. Only small thumbnails are captured; nothing is recorded."
         case .systemAudio:
-            "Lets the volume mixer turn individual apps up or down. Audio passes straight to your speakers; Spanner never records or saves it."
+            "Change the volume of individual apps. Audio goes straight to your speakers; nothing is recorded."
         case .bluetooth:
-            "Lets Spanner read your AirPods' and headphones' battery and notice when you put them on."
+            "Read the battery of your AirPods and headphones, and notice when you put them on."
+        }
+    }
+
+    /// Features that rely on this permission.
+    var features: [Feature] {
+        switch self {
+        case .accessibility: [.switcher, .snapping, .mouse, .displays]
+        case .screenRecording: [.switcher]
+        case .systemAudio: [.sound]
+        case .bluetooth: [.battery]
         }
     }
 

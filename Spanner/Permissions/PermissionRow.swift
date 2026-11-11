@@ -1,38 +1,57 @@
 import SwiftUI
 
 /// One permission with its live status and a button to grant it. Used by the
-/// Permissions page and onboarding so both behave identically.
+/// Permissions page, feature pages and onboarding so all behave identically.
 struct PermissionRow: View {
     @Environment(PermissionsManager.self) private var permissions
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let permission: Permission
+    /// Shown instead of the permission's rationale.
+    var subtitle: String? = nil
+    /// False where no running feature relies on the permission, so the row
+    /// is greyed and its button doesn't call for attention.
+    var isNeeded = true
 
     var body: some View {
         let granted = permissions.isGranted(permission)
         let asked = permissions.requested.contains(permission)
         VStack(alignment: .leading, spacing: Spacing.s) {
-            SettingsRow(title: permission.title, subtitle: permission.rationale,
-                        symbol: permission.symbol, tint: granted ? .green : FeatureTint.permissions) {
+            SettingsRow(title: permission.title, subtitle: subtitle ?? permission.rationale,
+                        symbol: permission.symbol, tint: isNeeded ? FeatureTint.permissions : .gray) {
                 if granted {
-                    StatusPill(text: "Granted", symbol: "checkmark.circle.fill", tint: .green)
-                        .transition(.scale.combined(with: .opacity))
+                    Label {
+                        Text("Granted").foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                    .transition(.opacity)
                 } else if asked {
-                    Button("Open Settings") { permissions.openSettings(for: permission) }
-                        .prominentButtonStyle()
-                        .controlSize(.small)
+                    action("Open Settings") { permissions.openSettings(for: permission) }
                 } else {
-                    Button("Grant…") { permissions.request(permission) }
-                        .prominentButtonStyle()
-                        .controlSize(.small)
+                    action("Grant…") { permissions.request(permission) }
                         .transition(.opacity)
                 }
             }
             if asked && !granted {
                 manualHelp
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity)
             }
         }
-        .animation(.spanner, value: granted)
-        .animation(.spanner, value: asked)
+        .animation(animation, value: granted)
+        .animation(animation, value: asked)
+    }
+
+    private var animation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.2) : .spanner
+    }
+
+    @ViewBuilder
+    private func action(_ title: String, perform: @escaping () -> Void) -> some View {
+        if isNeeded {
+            Button(title, action: perform).prominentButtonStyle()
+        } else {
+            Button(title, action: perform)
+        }
     }
 
     private var manualHelp: some View {
